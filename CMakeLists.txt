@@ -1,0 +1,20 @@
+cmake_minimum_required (VERSION 3.1)
+project (fisica1)
+
+if (EXISTS "$ENV{WORKSPACE}/sysconfig/cmake/physycom_config.cmake")
+   message(STATUS "Enabling physycom settings")
+   include("$ENV{WORKSPACE}/sysconfig/cmake/physycom_config.cmake")
+else()
+   message(STATUS "Unable to find physycom settings file")
+endif()
+
+if(APPLE)
+  set(KML_ROOT_DIR /usr/local/Cellar/libkml/1.2.0/)
+endif()
+
+find_package(KML)
+
+include_directories(${KML_INCLUDE_DIRS})
+
+add_executable(ace ${CMAKE_SOURCE_DIR}/src/read_kml.cpp)
+target_link_libraries(ace ${KML_LIBRARIES})
