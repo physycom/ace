@@ -36,5 +36,5 @@ install:
 build_script:
   - if [%COMPILER%]==[cygwin] %CYGSH% 'cmake .. -G "Unix Makefiles"'
   - if [%COMPILER%]==[cygwin] %CYGSH% 'cmake --build .'
-  - if [%COMPILER%]==[vs] cmake .. -G "Visual Studio 15 2017 Win64" "-DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" "-DVCPKG_TARGET_TRIPLET=%VCPKG_DEFAULT_TRIPLET%"
-  - if [%COMPILER%]==[vs] cmake --build . --config Release
+  - if [%COMPILER%]==[vs] cmake .. -G "Ninja" "-DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" "-DVCPKG_TARGET_TRIPLET=%VCPKG_DEFAULT_TRIPLET%" "-DCMAKE_BUILD_TYPE=Release"
+  - if [%COMPILER%]==[vs] cmake --build .
