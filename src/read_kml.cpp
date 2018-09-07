@@ -59,7 +59,7 @@ int main(int argc, char*argv[]) {
     id = id.substr(3, id.size()-3);
     std::string descr = ppm->get_description();
 
-    unsigned char u_descr[descr.size()];
+    unsigned char *u_descr = new unsigned char[descr.size()];
     std::copy(descr.begin(), descr.begin() + descr.size(), u_descr);
 
     int cod_istat = 0;
