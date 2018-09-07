@@ -27,7 +27,6 @@
 #
 
 include(FindPackageHandleStandardArgs)
-message("Looking for KML Library")
 
 find_path(KML_INCLUDE_DIR
   NAMES kml/dom.h

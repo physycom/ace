@@ -12,9 +12,13 @@ if(APPLE)
   set(KML_ROOT_DIR /usr/local/Cellar/libkml/1.2.0/)
 endif()
 
-find_package(KML)
-
-include_directories(${KML_INCLUDE_DIRS})
+find_package(KML REQUIRED)
+set(RAPIDXML_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/rapidxml/src)
+include_directories(${KML_INCLUDE_DIRS} ${RAPIDXML_INCLUDE_DIR})
+find_package(LibXml2 REQUIRED)
+add_definitions("${LIBXML2_DEFINITIONS}")
+include_directories(${KML_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR})
+message(STATUS "Include dirs: ${KML_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR}")
 
 add_executable(ace ${CMAKE_SOURCE_DIR}/src/read_kml.cpp)
-target_link_libraries(ace ${KML_LIBRARIES})
+target_link_libraries(ace ${KML_LIBRARIES} ${LIBXML2_LIBRARIES})
