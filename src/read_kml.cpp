@@ -1,3 +1,22 @@
+/* Copyright 2018 - Stefano Sinigardi */
+
+/***************************************************************************
+This file is part of ace.
+
+ace is free software : you can redistribute it and / or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+ace is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with ace. If not, see <http://www.gnu.org/licenses/>.
+***************************************************************************/
+
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
@@ -16,6 +35,10 @@
 
 int main(int argc, char*argv[]) {
 
+  if (argc == 1) {
+    std::cerr << "Input file not provided on command line" << std::endl;
+    exit(FILE_NOT_DECLARED);
+  }
   //kmlbase::File::ReadFileToString(argv[1], &file_data)
   std::ifstream t(argv[1], std::ios_base::in|std::ios_base::binary);
   if (!t.is_open() || !t.good()) {

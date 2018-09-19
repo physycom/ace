@@ -22,7 +22,11 @@ if(MSVC)
   list(APPEND ADDITIONAL_LIBRARIES ${URIPARSER_LIBRARY} ${ZLIB_LIBRARY} ${MINIZIP_LIBRARY} ${BZIP2_LIBRARY})
 endif()
 add_definitions("${LIBXML2_DEFINITIONS}")
-include_directories(${KML_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR})
+
+set(PHYSYCOM_UTILS "${CMAKE_SOURCE_DIR}/src/utils")
+include_directories(${KML_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${PHYSYCOM_UTILS})
+
+add_executable(remap ${CMAKE_SOURCE_DIR}/src/remap.cpp)
 
 add_executable(ace ${CMAKE_SOURCE_DIR}/src/read_kml.cpp)
 target_link_libraries(ace ${KML_LIBRARIES} ${LIBXML2_LIBRARIES} ${ADDITIONAL_LIBRARIES})
