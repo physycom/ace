@@ -20,6 +20,7 @@ along with ace. If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <map>
 #include <string>
 #include <iterator>
@@ -39,7 +40,10 @@ void usage(char* );
 bool Belongs_to(char, std::string);
 std::vector<std::vector<std::string>> Parse_file(std::string, std::string, std::string);
 std::vector<std::vector<std::string>> Rebuild_lat_lon(std::vector<std::vector<std::string>>&);
-jsoncons::json prepare_json(std::map<std::string, std::string> &);
+jsoncons::json prepare_json_from_map(std::map<std::string, std::string> &);
+jsoncons::json prepare_json_from_vector(std::vector<std::vector<std::string>> &);
+void dump_map(std::map<std::string, std::string> &);
+void dump_vector(std::vector<std::vector<std::string>> &);
 
 
 int main(int argc, char*argv[])
@@ -54,12 +58,12 @@ int main(int argc, char*argv[])
   std::string filename_out = std::string(argv[2]);
 
   std::vector<std::vector<std::string>> parsed_file = Parse_file(filename_in, SEPARATORS, COMMENTS);
-  std::vector<std::vector<std::string>> mapped_tokens = Rebuild_lat_lon(parsed_file);
+  std::vector<std::vector<std::string>> vectorOfAces = Rebuild_lat_lon(parsed_file);
 
   std::map<std::string, std::string> mapOfAces;
   size_t duplicated_records = 0;
 
-  for (auto line : mapped_tokens) {
+  for (auto line : vectorOfAces) {
     std::string aceID = line[0];
     std::string latlon = line[1];
 
@@ -71,11 +75,15 @@ int main(int argc, char*argv[])
   }
 
   std::cout << duplicated_records << " duplicated records were found in the csv." << std::endl;
-  jsoncons::json records = prepare_json(mapOfAces);
+  //jsoncons::json records = prepare_json_from_vector(vectorOfAces);
+  jsoncons::json records = prepare_json_from_map(mapOfAces);
+
+  //dump_map(mapOfAces);
+  //dump_vector(vectorOfAces);
 
   std::ofstream json_file(filename_out);
   json_file << jsoncons::pretty_print(records) << std::endl;
-
+  json_file.close();
   return 0;
 }
 
@@ -133,7 +141,7 @@ std::vector<std::vector<std::string>> Rebuild_lat_lon(std::vector<std::vector<st
 
 
 
-jsoncons::json prepare_json(std::map<std::string, std::string>& mapOfAces) {
+jsoncons::json prepare_json_from_map(std::map<std::string, std::string>& mapOfAces) {
   jsoncons::json records = jsoncons::json::array();
   std::map<std::string, std::string>::iterator it = mapOfAces.begin();
   while(it != mapOfAces.end()) {
@@ -167,7 +175,96 @@ jsoncons::json prepare_json(std::map<std::string, std::string>& mapOfAces) {
 
 
 
+jsoncons::json prepare_json_from_vector(std::vector<std::vector<std::string>> &vectorOfAces) {
+  jsoncons::json records = jsoncons::json::array();
+  std::vector<std::vector<std::string>>::iterator it = vectorOfAces.begin();
+  while(it != vectorOfAces.end()) {
+    //std::cout<<it->first<<" :: "<<it->second<<std::endl;
+    std::vector<std::string> tokens;
+    std::string separators = SEPARATORS;
+    physycom::split(tokens, (*it)[1], separators);
+    double lat, lon;
+    try {
+      lat = std::stod(tokens[0]);
+      lon = std::stod(tokens[1]);
+    }
+    catch(std::exception &e) {
+      std::cerr << "Unable to extract lat/lon from string in map: " << e.what() << std::endl;
+      exit(FAILED_STOD);
+    }
+    jsoncons::json record;
+    record["lon"] = lon;
+    record["lat"] = lat;
+    record["ace"] = (*it)[0];
+    records.add(record);
+    ++it;
+  }
+
+  // Searching element in std::map by key.
+  //if(mapOfAces.find(aceID) != mapOfAces.end()) {
+  //  std::cout << "Element with key " << aceID << " found" << std::endl;
+  //}
+  return records;
+}
+
+
+
 void usage(char* progname) {
   std::string pn(progname);
   std::cerr << "Usage: " << pn.substr(pn.find_last_of("/\\")+1) << " input.csv output.json" << std::endl;
+}
+
+
+
+void dump_map(std::map<std::string, std::string>& mapOfAces) {
+  std::stringstream output;
+  std::map<std::string, std::string>::iterator it = mapOfAces.begin();
+  while(it != mapOfAces.end()) {
+    //std::cout<<it->first<<" :: "<<it->second<<std::endl;
+    std::vector<std::string> tokens;
+    std::string separators = SEPARATORS;
+    physycom::split(tokens, it->second, separators);
+    double lat, lon;
+    try {
+      lat = std::stod(tokens[0]);
+      lon = std::stod(tokens[1]);
+    }
+    catch(std::exception &e) {
+      std::cerr << "Unable to extract lat/lon from string in map: " << e.what() << std::endl;
+      exit(FAILED_STOD);
+    }
+    output << it->first << ' ' << lat << ' ' << lon << std::endl;
+    ++it;
+  }
+
+  std::ofstream dump_map("map.txt");
+  dump_map << output.rdbuf();
+  dump_map.close();
+}
+
+
+
+void dump_vector(std::vector<std::vector<std::string>> &vectorOfAces){
+  std::stringstream output;
+  std::vector<std::vector<std::string>>::iterator it = vectorOfAces.begin();
+  while(it != vectorOfAces.end()) {
+    std::vector<std::string> tokens;
+    std::string separators = SEPARATORS;
+    physycom::split(tokens, (*it)[1], separators);
+    double lat, lon;
+    try {
+      lat = std::stod(tokens[0]);
+      lon = std::stod(tokens[1]);
+    }
+    catch(std::exception &e) {
+      std::cerr << "Unable to extract lat/lon from string in map: " << e.what() << std::endl;
+      exit(FAILED_STOD);
+    }
+    output << (*it)[0] << ' ' << lat << ' ' << lon << std::endl;
+    ++it;
+  }
+
+  std::ofstream dump_vector("vector.txt");
+  dump_vector << output.rdbuf();
+  dump_vector.close();
 }
