@@ -24,7 +24,8 @@ endif()
 add_definitions("${LIBXML2_DEFINITIONS}")
 
 set(PHYSYCOM_UTILS "${CMAKE_SOURCE_DIR}/src/utils")
-include_directories(${KML_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${PHYSYCOM_UTILS})
+set(JSONCONS "${CMAKE_SOURCE_DIR}/src/jsoncons/include")
+include_directories(${KML_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${PHYSYCOM_UTILS} ${JSONCONS})
 
 add_executable(remap ${CMAKE_SOURCE_DIR}/src/remap.cpp)
 

@@ -25,45 +25,56 @@ along with ace. If not, see <http://www.gnu.org/licenses/>.
 #include <iterator>
 
 #include <physycom/string.hpp>
+#include <jsoncons/json.hpp>
 
 #include "error_codes.h"
 
-#define SEPARATORS       " \t"
+#define SEPARATORS       ","
 #define COMMENTS         "#"
-#define MAJOR_VERSION    0
-#define MINOR_VERSION    1
 
+#define MAJOR_VERSION    0
+#define MINOR_VERSION    2
+
+void usage(char* );
 bool Belongs_to(char, std::string);
 std::vector<std::vector<std::string>> Parse_file(std::string, std::string, std::string);
+std::vector<std::vector<std::string>> Rebuild_lat_lon(std::vector<std::vector<std::string>>&);
+jsoncons::json prepare_json(std::map<std::string, std::string> &);
 
 
 int main(int argc, char*argv[])
 {
   std::cout << argv[0] << " v. " << MAJOR_VERSION << '.' << MINOR_VERSION << std::endl;
-  std::string filename;
-  filename = std::string(argv[1]);
+  if (argc != 3) {
+    usage(argv[0]);
+    exit(INSUFFICIENT_COMMAND_LINE_PARAMETERS);
+  }
 
-  std::vector< std::vector<std::string> > parsed_file = Parse_file(filename, SEPARATORS, COMMENTS);
+  std::string filename_in = std::string(argv[1]);
+  std::string filename_out = std::string(argv[2]);
+
+  std::vector<std::vector<std::string>> parsed_file = Parse_file(filename_in, SEPARATORS, COMMENTS);
+  std::vector<std::vector<std::string>> mapped_tokens = Rebuild_lat_lon(parsed_file);
+
   std::map<std::string, std::string> mapOfAces;
+  size_t duplicated_records = 0;
 
-  std::string aceID = "aceID";
-  std::string latlon = "lat,lon";
+  for (auto line : mapped_tokens) {
+    std::string aceID = line[0];
+    std::string latlon = line[1];
 
-  // Insert and check if insertion is successful
-  if(mapOfAces.insert(std::make_pair(aceID, latlon)).second == false) {
-    std::cerr << "Element with key " << aceID << " not inserted because already existed" << std::endl;
+    // Insert and check if insertion is successful
+    if(mapOfAces.insert(std::make_pair(aceID, latlon)).second == false) {
+      duplicated_records++;
+      //std::cerr << "Element with key " << aceID << " not inserted because already existed" << std::endl;
+    }
   }
 
-  std::map<std::string, std::string>::iterator it = mapOfAces.begin();
-  while(it != mapOfAces.end()) {
-    std::cout<<it->first<<" :: "<<it->second<<std::endl;
-    it++;
-  }
+  std::cout << duplicated_records << " duplicated records were found in the csv." << std::endl;
+  jsoncons::json records = prepare_json(mapOfAces);
 
-  // Searching element in std::map by key.
-  if(mapOfAces.find(aceID) != mapOfAces.end()) {
-    std::cout << "Element with key " << aceID << " found" << std::endl;
-  }
+  std::ofstream json_file(filename_out);
+  json_file << jsoncons::pretty_print(records) << std::endl;
 
   return 0;
 }
@@ -77,7 +88,7 @@ bool Belongs_to(char c, std::string s) {
 
 
 
-std::vector< std::vector<std::string> > Parse_file(std::string file_name, std::string separators, std::string comment) {
+std::vector<std::vector<std::string>> Parse_file(std::string file_name, std::string separators, std::string comment) {
   std::ifstream file_to_parse(file_name, std::ios::in);
   if (!file_to_parse) {
     std::cout << "Cannot open " << file_name << ". Quitting..." << std::endl;
@@ -85,10 +96,10 @@ std::vector< std::vector<std::string> > Parse_file(std::string file_name, std::s
   }
   std::string line;
   std::vector<std::string> tokens;
-  std::vector< std::vector<std::string> > parsed;
+  std::vector<std::vector<std::string>> parsed;
   while (getline(file_to_parse, line)) {
     if (Belongs_to(line[0], comment) || !line.size()) continue;
-    physycom::split(tokens, line, std::string(separators));
+    physycom::split(tokens, line, separators);
     for (size_t i = 0; i < tokens.size(); i++) {
       if (Belongs_to(tokens[i][0], comment)) { tokens.erase(tokens.begin() + i, tokens.end()); }
     }
@@ -102,3 +113,61 @@ std::vector< std::vector<std::string> > Parse_file(std::string file_name, std::s
 }
 
 
+
+std::vector<std::vector<std::string>> Rebuild_lat_lon(std::vector<std::vector<std::string>>& parsed_file) {
+  std::vector<std::vector<std::string>> mapped_tokens;
+  for (auto line : parsed_file) {
+    if (line.size() != 3) {
+      std::cerr << "Unexpected line length: " << line.size() << std::endl;
+      exit(UNEXPECTED_LINE_LENGTH);
+    }
+    std::string aceID = line[0];
+    std::string latlon = line[1] + ',' + line[2];
+    std::vector<std::string> mapped_token;
+    mapped_token.push_back(aceID);
+    mapped_token.push_back(latlon);
+    mapped_tokens.push_back(mapped_token);
+  }
+  return mapped_tokens;
+}
+
+
+
+jsoncons::json prepare_json(std::map<std::string, std::string>& mapOfAces) {
+  jsoncons::json records = jsoncons::json::array();
+  std::map<std::string, std::string>::iterator it = mapOfAces.begin();
+  while(it != mapOfAces.end()) {
+    //std::cout<<it->first<<" :: "<<it->second<<std::endl;
+    std::vector<std::string> tokens;
+    std::string separators = SEPARATORS;
+    physycom::split(tokens, it->second, separators);
+    double lat, lon;
+    try {
+      lat = std::stod(tokens[0]);
+      lon = std::stod(tokens[1]);
+    }
+    catch(std::exception &e) {
+      std::cerr << "Unable to extract lat/lon from string in map: " << e.what() << std::endl;
+      exit(FAILED_STOD);
+    }
+    jsoncons::json record;
+    record["lon"] = lon;
+    record["lat"] = lat;
+    record["ace"] = it->first;
+    records.add(record);
+    ++it;
+  }
+
+  // Searching element in std::map by key.
+  //if(mapOfAces.find(aceID) != mapOfAces.end()) {
+  //  std::cout << "Element with key " << aceID << " found" << std::endl;
+  //}
+  return records;
+}
+
+
+
+void usage(char* progname) {
+  std::string pn(progname);
+  std::cerr << "Usage: " << pn.substr(pn.find_last_of("/\\")+1) << " input.csv output.json" << std::endl;
+}

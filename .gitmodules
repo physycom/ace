@@ -4,3 +4,6 @@
 [submodule "src/utils"]
 	path = src/utils
 	url = https://github.com/physycom/utils
+[submodule "src/jsoncons"]
+	path = src/jsoncons
+	url = https://github.com/danielaparker/jsoncons
