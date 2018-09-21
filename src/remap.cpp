@@ -30,11 +30,12 @@ along with ace. If not, see <http://www.gnu.org/licenses/>.
 
 #include "error_codes.h"
 
-#define SEPARATORS       ","
+#define SEPARATORS_CSV   ","
+#define SEPARATORS_TSV   " \t"
 #define COMMENTS         "#"
 
-#define MAJOR_VERSION    0
-#define MINOR_VERSION    2
+#define MAJOR_VERSION    1
+#define MINOR_VERSION    0
 
 void usage(char* );
 bool Belongs_to(char, std::string);
@@ -44,6 +45,7 @@ jsoncons::json prepare_json_from_map(std::map<std::string, std::string> &);
 jsoncons::json prepare_json_from_vector(std::vector<std::vector<std::string>> &);
 void dump_map(std::map<std::string, std::string> &);
 void dump_vector(std::vector<std::vector<std::string>> &);
+void remap_file(std::vector<std::vector<std::string>> &, std::map<std::string, std::string> &);
 
 
 int main(int argc, char*argv[])
@@ -57,7 +59,7 @@ int main(int argc, char*argv[])
   std::string filename_in = std::string(argv[1]);
   std::string filename_out = std::string(argv[2]);
 
-  std::vector<std::vector<std::string>> parsed_file = Parse_file(filename_in, SEPARATORS, COMMENTS);
+  std::vector<std::vector<std::string>> parsed_file = Parse_file(filename_in, SEPARATORS_CSV, COMMENTS);
   std::vector<std::vector<std::string>> vectorOfAces = Rebuild_lat_lon(parsed_file);
 
   std::map<std::string, std::string> mapOfAces;
@@ -84,6 +86,16 @@ int main(int argc, char*argv[])
   std::ofstream json_file(filename_out);
   json_file << jsoncons::pretty_print(records) << std::endl;
   json_file.close();
+
+  std::string olivetti_file_name = "redentore.txt";
+  std::vector<std::vector<std::string>> olivetti_parsed_file = Parse_file(olivetti_file_name, SEPARATORS_TSV, COMMENTS);
+
+  //drop last two elements
+  olivetti_parsed_file.erase(olivetti_parsed_file.begin()+olivetti_parsed_file.size()-2,olivetti_parsed_file.begin()+olivetti_parsed_file.size()-1);
+  //drop first element
+  olivetti_parsed_file.erase(olivetti_parsed_file.begin());
+  remap_file(olivetti_parsed_file, mapOfAces);
+
   return 0;
 }
 
@@ -147,7 +159,7 @@ jsoncons::json prepare_json_from_map(std::map<std::string, std::string>& mapOfAc
   while(it != mapOfAces.end()) {
     //std::cout<<it->first<<" :: "<<it->second<<std::endl;
     std::vector<std::string> tokens;
-    std::string separators = SEPARATORS;
+    std::string separators = SEPARATORS_CSV;
     physycom::split(tokens, it->second, separators);
     double lat, lon;
     try {
@@ -181,7 +193,7 @@ jsoncons::json prepare_json_from_vector(std::vector<std::vector<std::string>> &v
   while(it != vectorOfAces.end()) {
     //std::cout<<it->first<<" :: "<<it->second<<std::endl;
     std::vector<std::string> tokens;
-    std::string separators = SEPARATORS;
+    std::string separators = SEPARATORS_CSV;
     physycom::split(tokens, (*it)[1], separators);
     double lat, lon;
     try {
@@ -222,7 +234,7 @@ void dump_map(std::map<std::string, std::string>& mapOfAces) {
   while(it != mapOfAces.end()) {
     //std::cout<<it->first<<" :: "<<it->second<<std::endl;
     std::vector<std::string> tokens;
-    std::string separators = SEPARATORS;
+    std::string separators = SEPARATORS_CSV;
     physycom::split(tokens, it->second, separators);
     double lat, lon;
     try {
@@ -249,7 +261,7 @@ void dump_vector(std::vector<std::vector<std::string>> &vectorOfAces){
   std::vector<std::vector<std::string>>::iterator it = vectorOfAces.begin();
   while(it != vectorOfAces.end()) {
     std::vector<std::string> tokens;
-    std::string separators = SEPARATORS;
+    std::string separators = SEPARATORS_CSV;
     physycom::split(tokens, (*it)[1], separators);
     double lat, lon;
     try {
@@ -267,4 +279,30 @@ void dump_vector(std::vector<std::vector<std::string>> &vectorOfAces){
   std::ofstream dump_vector("vector.txt");
   dump_vector << output.rdbuf();
   dump_vector.close();
+}
+
+
+
+void remap_file(std::vector<std::vector<std::string>> &olivetti_parsed_file, std::map<std::string, std::string> &mapOfAces) {
+  size_t unmatched_aces = 0;
+  std::stringstream output;
+  std::vector<std::vector<std::string>>::iterator it = olivetti_parsed_file.begin();
+  for (size_t i = 0 ; i < olivetti_parsed_file.size() ; ++i) {
+    std::string latlon;
+    std::string ace = olivetti_parsed_file[i][0];
+    std::map<std::string, std::string>::iterator map_it = mapOfAces.find(ace);
+    if(map_it != mapOfAces.end()) {
+      latlon = map_it->second;
+      output << latlon << ' ';
+      for (size_t j = 1 ; j < olivetti_parsed_file[i].size() ; ++j) output << olivetti_parsed_file[i][j] << ' ';
+      output << std::endl;
+    }
+    else unmatched_aces++;
+  }
+  std::cout << "Unable to match " << unmatched_aces << " aces" << std::endl;
+
+  std::ofstream dump_remap("remap.txt");
+  dump_remap << output.rdbuf();
+  dump_remap.close();
+
 }
