@@ -28,6 +28,7 @@ set(JSONCONS "${CMAKE_SOURCE_DIR}/src/jsoncons/include")
 include_directories(${KML_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${PHYSYCOM_UTILS} ${JSONCONS})
 
 add_executable(remap ${CMAKE_SOURCE_DIR}/src/remap.cpp)
+add_executable(animate ${CMAKE_SOURCE_DIR}/src/animate.cpp)
 
 add_executable(ace ${CMAKE_SOURCE_DIR}/src/read_kml.cpp)
 target_link_libraries(ace ${KML_LIBRARIES} ${LIBXML2_LIBRARIES} ${ADDITIONAL_LIBRARIES})
