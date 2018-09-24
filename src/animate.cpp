@@ -138,16 +138,23 @@ void usage(char* progname) {
 void dump_html(std::vector<std::vector<std::string>> &parsed_file, std::string file_name, size_t max_val) {
   std::stringstream output;
   output << html_header;
-  output << "          max: " << max_val << ",\n          data: [";
-  for (size_t i = 0 ; i < parsed_file.size() ; ++i) {
-    std::string lat = parsed_file[i][0];
-    std::string lng = parsed_file[i][1];
-    std::string count = parsed_file[i][2];
-    output << "{lat: " << lat << ", lng:" << lng << ", count: " << count << "}";
-    if (i != parsed_file.size()-1) output << ",";
+  size_t max_column_number = parsed_file[0].size();
+  if (max_column_number > 10) max_column_number = 10;
+
+  for (size_t c = 2 ; c < max_column_number ; ++c) {
+    output << "        var data_" << c << " = {" << std::endl;
+    output << "          max: " << max_val << ",\n          data: [";
+    for (size_t i = 0 ; i < parsed_file.size() ; ++i) {
+      std::string lat = parsed_file[i][0];
+      std::string lng = parsed_file[i][1];
+      std::string count = parsed_file[i][c];
+      output << "{lat: " << lat << ", lng:" << lng << ", count: " << count << "}";
+      if (i != parsed_file.size()-1) output << ",";
+    }
+    output << "]" << std::endl;
+    output << "        };" << std::endl;
+    output << "        animationData.push(data_" << c << ");" << std::endl;
   }
-  output << "]" << std::endl;
-  output << "        };" << std::endl;
 
   // radius should be small ONLY if scaleRadius is true (or small radius is intended)
   double radius = 0.3;

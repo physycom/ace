@@ -24,7 +24,7 @@ R"(
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Leaflet Heatmap Layer Plugin</title>
+    <title>Heatmap</title>
     <style>
       body, html { margin:0; padding:0; height:100%;}
       body { font-family:sans-serif; }
@@ -40,6 +40,7 @@ R"(
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
     <script type="text/javascript" src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
     <script type="text/javascript" src="https://cdn.rawgit.com/pa7/heatmap.js/4e64f5ae/build/heatmap.js"></script>
+    <!--  <script src="https://cdn.rawgit.com/pa7/heatmap.js/4e64f5ae/build/heatmap.min.js"></script> -->
     <script type="text/javascript" src="https://cdn.rawgit.com/pa7/heatmap.js/4e64f5ae/plugins/leaflet-heatmap/leaflet-heatmap.js"></script>
   </head>
   <body>
@@ -47,8 +48,7 @@ R"(
 
     <script>
       window.onload = function() {
-
-        var testData = {
+        var animationData = [];
 )";
 
 static const std::string html_footer =
@@ -69,7 +69,7 @@ R"(
           layers: [baseLayer, heatmapLayer]
         });
 
-        heatmapLayer.setData(testData);
+        heatmapLayer.setData(animationData[0]);
 
         // make accessible for debugging
         layer = heatmapLayer;
