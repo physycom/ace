@@ -68,7 +68,7 @@ def view(verbose):
   print("ISTAT tot reg  :",reg_tot)
   print("ISTAT tot prov :",prov_tot)
   print("ISTAT tot com  :",com_tot)
-view(False)
+view(True)
 
 import json
 with open('acemap-empty-hr.json', 'w') as f:

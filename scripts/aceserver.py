@@ -3,11 +3,13 @@
 from http.server import BaseHTTPRequestHandler
 import os
 import json
+import re
+from matplotlib import cm
 
 class Server(BaseHTTPRequestHandler):
   def __init__(self, *args):
     with open('acemap.json') as f:
-      self.acedb = json.load(f)
+      self.istat = json.load(f)
     BaseHTTPRequestHandler.__init__(self, *args)
 
   def do_HEAD(self):
@@ -40,23 +42,118 @@ class Server(BaseHTTPRequestHandler):
         'type': 'FeatureCollection',
         'features': []
       }
-      empty_feat = {
+      italy_feat = {
         'type': 'Feature',
         'properties': {
           'code' : 'Italy',
           'color': 'rgb(255, 0, 0)'
         },
         'geometry': {
-          'type': 'MultiPoint',
-          'coordinates': [
-            [12.833333333333334, 42.8333333] # italy center
-          ]
+          'type': 'Point',
+          'coordinates': [12.833333333333334, 42.8333333] # italy center
         }
       }
 
-      params = self.path.split('?')[1:]
-      if len(params) == 0:
-        geojson['features'].append(empty_feat)
+      params = self.path.split('?')
+      if len(params) == 2:
+        params = params[1].split('&')
+      else:
+        params = ['']
+
+      for i,p in enumerate(params):
+        scale = 0 if len(params) == 1 else ( i * 255 ) // (len(params)-1)
+        color = cm.jet( scale )
+        color = 'rgba(' + ','.join([ str(int(c*255)) for c in color]) + ')'
+        print(color)
+        if len(p) == 0:
+          print('Match 0 digit : -' + p + '-')
+        elif re.search(r'^\d{3}(?!\d)', p):
+          print('Match 3 digit : ' + p)
+          reg = str(int(p))
+          for provid, prov in self.istat[reg]['prov'].items():
+            try:
+              print(provid, prov['name'])
+              for k,v in prov['com'].items():
+                print('--- ',k,v['name'])
+                empty_feat = {
+                  'type': 'Feature',
+                  'properties': {
+                    'code' : '',
+                    'color': color
+                  },
+                  'geometry': {
+                    'type': 'Point',
+                    'coordinates': []
+                  }
+                }
+                empty_feat['properties']['code'] = v['name']
+                if v['centroid'] == [0,0]:
+                  print('No geodata for ' + v['name'] + '(' + reg + '|' + prov + '|' + k + ')')
+                  continue
+                empty_feat['geometry']['coordinates'] = v['centroid']
+                geojson['features'].append(empty_feat)
+            except:
+              print('No geodata for ' + reg + '|' + provid)
+              continue
+        elif re.search(r'^\d{6}(?!\d)', p):
+          print('Match 6 digit : ' + p)
+          reg = str(int(p[0:3]))
+          prov = str(int(p[3:6]))
+          try:
+            for k,v in self.istat[reg]['prov'][prov]['com'].items():
+              empty_feat = {
+                'type': 'Feature',
+                'properties': {
+                  'code' : '',
+                  'color': color
+                },
+                'geometry': {
+                  'type': 'Point',
+                  'coordinates': []
+                }
+              }
+              empty_feat['properties']['code'] = v['name']
+              if v['centroid'] == [0,0]:
+                print('No geodata for ' + v['name'] + '(' + reg + '|' + prov + '|' + k + ')')
+                continue
+              empty_feat['geometry']['coordinates'] = v['centroid']
+              geojson['features'].append(empty_feat)
+          except:
+            print('No geodata for ' + reg + '|' + prov)
+            continue
+        elif re.search(r'^\d{9}(?!\d)', p):
+          print('Match 9 digit : ' + p)
+          reg = str(int(p[0:3]))
+          prov = str(int(p[3:6]))
+          com = str(int(p[6:9]))
+          name = ''
+          c = [0,0]
+          try:
+            name = self.istat[reg]['prov'][prov]['com'][com]['name']
+            c = self.istat[reg]['prov'][prov]['com'][com]['centroid']
+            empty_feat = {
+              'type': 'Feature',
+              'properties': {
+                'code' : '',
+                'color': 'rgb(255, 0, 0)'
+              },
+              'geometry': {
+                'type': 'Point',
+                'coordinates': []
+              }
+            }
+            empty_feat['properties']['code'] = name
+            empty_feat['geometry']['coordinates'] = c
+            geojson['features'].append(empty_feat)
+          except:
+            print('No acemap match for : ' + p)
+            continue
+          print('Match for ' + p + ' : ' + name + ' ' + str(c[0]) + ' ' + str(c[1]))
+        else:
+          print('No query match : ' + p)
+
+      if len(geojson['features']) == 0:
+        geojson['features'].append(italy_feat)
 
       response_content = json.dumps(geojson)
       response_content = bytes(response_content, "UTF-8")

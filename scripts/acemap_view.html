@@ -14,7 +14,14 @@
 
 /////////// BEGING DYNAMIC CONTENT
 
-      var jsonurl = "http://192.168.1.79:4444/json"
+      var params = window.location.href.split("?")
+      if ( params.length == 2 )
+        params = "?" + params[params.length-1]
+      else
+        params = ""
+//      console.log("params : " + params)
+
+      var jsonurl = "http://192.168.1.79:4444/json" + params
       function Get(yourUrl){
         var Httpreq = new XMLHttpRequest(); // a new request
         Httpreq.open("GET",yourUrl,false);
@@ -29,22 +36,42 @@
 
       // set style function to parse geojson content
       var styleFunction = function(feature) {
-        style = new ol.style.Style({
-          stroke: new ol.style.Stroke({
-            color: 'black',
-            width: 1
-          }),
-          fill: new ol.style.Fill({
-            color: feature.get('color'),
-          }),
-          text: new ol.style.Text({
-            font: '12px Calibri,sans-serif',
-            fill: new ol.style.Fill({ color: '#000000' }),
-            stroke: new ol.style.Stroke({ color: '#000000' }),
-            text: feature.get('code') == null ? 'null' : feature.get('code').toString()
-          })
-        });
-        return style;
+        type = feature.getGeometry().getType()
+        if (type == 'Point' || type == 'MultiPoint') {
+          var style = new ol.style.Style({
+            image : new ol.style.Circle({
+              radius: 3,
+              fill: new ol.style.Fill({ color: feature.get('color') }),
+              stroke: new ol.style.Stroke({ color: feature.get('color'), width: 1})
+            }),
+            text : new ol.style.Text({
+              font: '12px Calibri,sans-serif',
+              fill: new ol.style.Fill({ color: '#000000' }),
+              stroke: new ol.style.Stroke({ color: '#000000' }),
+              text: map.getView().getZoom() < 9 ? '' : ( feature.get('code') == null ? 'null' : feature.get('code').toString() ) ,
+              offsetY: -10
+            })
+          });
+          return style;
+        }
+        else if ( type == 'Polygon' || type == 'MultiPolygon'){
+          var style = new ol.style.Style({
+            stroke: new ol.style.Stroke({
+              color: 'black',
+              width: 1
+            }),
+            fill: new ol.style.Fill({
+              color: feature.get('color'),
+            }),
+            text: new ol.style.Text({
+              font: '12px Calibri,sans-serif',
+              fill: new ol.style.Fill({ color: '#000000' }),
+              stroke: new ol.style.Stroke({ color: '#000000' }),
+              text: feature.get('code') == null ? 'null' : feature.get('code').toString()
+            })
+          });
+          return style;
+        }
       };
 
       // create vector layer source
@@ -79,9 +106,16 @@
       });
 
       // modify view to enclose all features
-      var extent = vectorLayer.getSource().getExtent();
-      map.getView().fit(extent, map.getSize());
-      map.getView().setZoom(map.getView().getZoom()-1);
+      if (geojsonObject['features'].length == 1){
+        c = geojsonObject['features'][0]['geometry']['coordinates']
+        map.getView().setCenter(ol.proj.transform([c[0], c[1]], 'EPSG:4326',  'EPSG:3857'));
+        map.getView().setZoom(7);
+      }
+      else{
+        var extent = vectorLayer.getSource().getExtent();
+        map.getView().fit(extent, map.getSize());
+        map.getView().setZoom(map.getView().getZoom()-1);
+      }
 
     </script>
   </body>
