@@ -64,17 +64,18 @@ class Server(BaseHTTPRequestHandler):
         scale = 0 if len(params) == 1 else ( i * 255 ) // (len(params)-1)
         color = cm.jet( scale )
         color = 'rgba(' + ','.join([ str(int(c*255)) for c in color]) + ')'
-        print(color)
+#        print(color)
         if len(p) == 0:
-          print('Match 0 digit : -' + p + '-')
+#          print('Match 0 digit : -' + p + '-')
+          continue
         elif re.search(r'^\d{3}(?!\d)', p):
-          print('Match 3 digit : ' + p)
+#          print('Match 3 digit : ' + p)
           reg = str(int(p))
           for provid, prov in self.istat[reg]['prov'].items():
             try:
-              print(provid, prov['name'])
+#              print(provid, prov['name'])
               for k,v in prov['com'].items():
-                print('--- ',k,v['name'])
+#                print('--- ',k,v['name'])
                 empty_feat = {
                   'type': 'Feature',
                   'properties': {
@@ -96,7 +97,7 @@ class Server(BaseHTTPRequestHandler):
               print('No geodata for ' + reg + '|' + provid)
               continue
         elif re.search(r'^\d{6}(?!\d)', p):
-          print('Match 6 digit : ' + p)
+#          print('Match 6 digit : ' + p)
           reg = str(int(p[0:3]))
           prov = str(int(p[3:6]))
           try:
@@ -122,7 +123,7 @@ class Server(BaseHTTPRequestHandler):
             print('No geodata for ' + reg + '|' + prov)
             continue
         elif re.search(r'^\d{9}(?!\d)', p):
-          print('Match 9 digit : ' + p)
+#          print('Match 9 digit : ' + p)
           reg = str(int(p[0:3]))
           prov = str(int(p[3:6]))
           com = str(int(p[6:9]))
@@ -146,9 +147,9 @@ class Server(BaseHTTPRequestHandler):
             empty_feat['geometry']['coordinates'] = c
             geojson['features'].append(empty_feat)
           except:
-            print('No acemap match for : ' + p)
+            print('No acemap match for : ' + reg + '|' + prov + '|' + com)
             continue
-          print('Match for ' + p + ' : ' + name + ' ' + str(c[0]) + ' ' + str(c[1]))
+#          print('Match for ' + p + ' : ' + name + ' ' + str(c[0]) + ' ' + str(c[1]))
         else:
           print('No query match : ' + p)
 
