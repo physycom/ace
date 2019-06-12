@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>TEST JSON ACE SERVER</title>
+    <link rel="stylesheet" href="https://openlayers.org/en/v5.3.0/css/ol.css" type="text/css">
+    <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.2.0/build/ol.js"></script>
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+
+  </head>
+  <body>
+    <div id="map" class="map"></div>
+    <script>
+
+/////////// BEGING DYNAMIC CONTENT
+
+      var jsonurl = "http://192.168.1.79:4444/json"
+      function Get(yourUrl){
+        var Httpreq = new XMLHttpRequest(); // a new request
+        Httpreq.open("GET",yourUrl,false);
+        Httpreq.send();
+        return Httpreq.responseText;
+      }
+      var j = Get(jsonurl);
+//      console.log(j)
+      var geojsonObject = JSON.parse(j);
+
+/////////// END DYNAMIC CONTENT
+
+      // set style function to parse geojson content
+      var styleFunction = function(feature) {
+        style = new ol.style.Style({
+          stroke: new ol.style.Stroke({
+            color: 'black',
+            width: 1
+          }),
+          fill: new ol.style.Fill({
+            color: feature.get('color'),
+          }),
+          text: new ol.style.Text({
+            font: '12px Calibri,sans-serif',
+            fill: new ol.style.Fill({ color: '#000000' }),
+            stroke: new ol.style.Stroke({ color: '#000000' }),
+            text: feature.get('code') == null ? 'null' : feature.get('code').toString()
+          })
+        });
+        return style;
+      };
+
+      // create vector layer source
+      var vectorSource = new ol.source.Vector({
+        features: (new ol.format.GeoJSON({
+          defaultDataProjection :'EPSG:4326',
+          projection: 'EPSG:3857',
+          featureProjection: 'EPSG:3857'
+        })).readFeatures(geojsonObject)
+      });
+
+      // create vector layer
+      var vectorLayer = new ol.layer.Vector({
+        source: vectorSource,
+        style: styleFunction
+      });
+
+      // create map object
+      var map = new ol.Map({
+        layers: [
+          new ol.layer.Tile({
+            source: new ol.source.OSM()
+          }),
+          vectorLayer
+        ],
+        target: 'map',
+        controls: ol.control.defaults({
+          attributionOptions: {
+            collapsible: false
+          }
+        })
+      });
+
+      // modify view to enclose all features
+      var extent = vectorLayer.getSource().getExtent();
+      map.getView().fit(extent, map.getSize());
+      map.getView().setZoom(map.getView().getZoom()-1);
+
+    </script>
+  </body>
+</html>

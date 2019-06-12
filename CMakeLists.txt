@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.1)
-project (fisica1)
+project (ace)
 
 if (EXISTS "$ENV{WORKSPACE}/sysconfig/cmake/physycom_config.cmake")
    message(STATUS "Enabling physycom settings")
