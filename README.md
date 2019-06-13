@@ -48,17 +48,26 @@ Update geodata on an *acemap* of italian _comuni_ populating fields: `centroid` 
  . output: `acemap_RXX.geojson` where `RXX` is the _regione_ shapefile tag (e.g. `R01` is for _Piemonte_)
 
 - `aceserver.py`
-Local http server which provides *acemap* json data through GET requests.
+Local http server which provides *acemap* json data visualization through GET requests.
  . input: `acemap.json` as produced by previous tools
- . output: through html GET request at url `http://address:port/json?query` where `query` is a string formatted as
-  - `reg` returns
-  - `regprov` returns
-  - `regprovcom` returns
+ . input: address
+ . input: port
+Access the web page at `http://address:port/view?params` where the string `params` is a concatenation (separator `&`) of string of types:
+ . _Regione_ code: `XXX` (e.g. `001`)
+ . _Provincia_ code: `XXXYYY` (e.g. `0010001`)
+ . _Comune_ code: `XXXYYYZZZ` (e.g. `0010001001`)
 
-- `acemap_view.html`
-Sample web page to visualize geodata. Bypass CORS policy with `Google Chrome` by:
-  . MacOS : `open -a Google\ Chrome --args --disable-web-security --user-data-dir="/somedir"`
+- `acemap_mobupdate.py`
+Update geodata on an *acemap* of italian _comuni_ populating fields: `centroid` and `sez_count`.
+ . input: `acemap.json` (properly formatted)
+ . input: regex to match file of the form `mobility_YYYYMMDD_HHMM.tsv` (properly formatted mobility data)
+ . output: `acemap_RXX.geojson` where `RXX` is the _regione_ shapefile tag (e.g. `R01` is for _Piemonte_)
 
 ### Documentazione
 Details of ISTAT databases
 https://www.istat.it/it/files/2013/11/2015.04.28-Descrizione-dati-Pubblicazione.pdf
+
+### TODO
+- add legend to acemap_view.html
+- aceserver fix 'no geodata for 1|1'
+

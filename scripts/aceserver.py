@@ -6,9 +6,11 @@ import json
 import re
 from matplotlib import cm
 
+acemapfile = ''
+
 class Server(BaseHTTPRequestHandler):
   def __init__(self, *args):
-    with open('acemap.json') as f:
+    with open(acemapfile) as f:
       self.istat = json.load(f)
     BaseHTTPRequestHandler.__init__(self, *args)
 
@@ -24,12 +26,12 @@ class Server(BaseHTTPRequestHandler):
   def handle_http(self):
     if self.path == "/":
       status = 200
-      content_type = "text/plain"
+      content_type = "text/html; charset=utf-8"
       response_content = "Site under construction"
       response_content = bytes(response_content, "UTF-8")
       size = len(response_content)
     elif self.path.startswith("/view"):
-      f = open('acemap_view.html')
+      f = open(os.path.dirname(os.path.realpath(__file__)) + '/html/acemap_view.html')
       status = 200
       content_type = "text/html"
       response_content = f.read()
@@ -181,7 +183,9 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-a', '--server-address', help='http server address', default='localhost')
 parser.add_argument('-p', '--server-port', help='http server port', default=9999, type=int)
+parser.add_argument('-m', '--acemap', help='acemap json file', required=True)
 args = parser.parse_args()
+acemapfile = args.acemap
 
 import time
 from http.server import HTTPServer

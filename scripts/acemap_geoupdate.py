@@ -6,13 +6,11 @@ parser.add_argument("-i", "--acein", help="original acemap JSON file", required=
 parser.add_argument("-s", "--shape", help="ISTAT shape geojson (e.g. R01_11_WGS84.geojson)", required=True)
 args = parser.parse_args()
 
-import pandas as pd
 import numpy as np
+import json
 
 # Import ISTAT SEZIONI DI CENSIMENTO geometry geojson
 # and update istat map values
-import json
-
 with open(args.acein) as f:
   istat = json.load(f)
 

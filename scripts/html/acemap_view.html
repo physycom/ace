@@ -12,18 +12,22 @@
     <script>
 
 /////////// BEGING DYNAMIC CONTENT
+      var url = window.location.href
+      var baseurl = url.substring(0, url.lastIndexOf('/'));
+//      console.log('url     : ' + url)
+//      console.log('baseurl : ' + baseurl)
 
-      var params = window.location.href.split("?")
+      var params = window.location.href.split('?')
       if ( params.length == 2 )
-        params = "?" + params[params.length-1]
+        params = '?' + params[params.length-1]
       else
-        params = ""
-//      console.log("params : " + params)
+        params = ''
+//      console.log('params : ' + params)
 
-      var jsonurl = "http://localhost:4444/json" + params
+      var jsonurl = baseurl + '/json' + params
       function Get(yourUrl){
         var Httpreq = new XMLHttpRequest(); // a new request
-        Httpreq.open("GET",yourUrl,false);
+        Httpreq.open('GET',yourUrl,false);
         Httpreq.send();
         return Httpreq.responseText;
       }
