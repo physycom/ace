@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>TEST JSON ACE SERVER</title>
+    <title>acemap viewer</title>
     <link rel="stylesheet" href="https://openlayers.org/en/v5.3.0/css/ol.css" type="text/css">
     <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.2.0/build/ol.js"></script>
     <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
@@ -87,18 +87,21 @@
       });
 
       // create vector layer
-      var vectorLayer = new ol.layer.Vector({
+      var vectorlayer = new ol.layer.Vector({
         source: vectorSource,
         style: styleFunction
       });
 
-      // create map object
+      // create tile layer
+      var tilelayer = new ol.layer.Tile({
+        source: new ol.source.OSM()
+      });
+
+      // create map
       var map = new ol.Map({
         layers: [
-          new ol.layer.Tile({
-            source: new ol.source.OSM()
-          }),
-          vectorLayer
+          tilelayer,
+          vectorlayer
         ],
         target: 'map',
         controls: ol.control.defaults({
@@ -115,7 +118,7 @@
         map.getView().setZoom(7);
       }
       else{
-        var extent = vectorLayer.getSource().getExtent();
+        var extent = vectorlayer.getSource().getExtent();
         map.getView().fit(extent, map.getSize());
         map.getView().setZoom(map.getView().getZoom()-1);
       }

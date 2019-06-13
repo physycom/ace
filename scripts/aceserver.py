@@ -24,22 +24,29 @@ class Server(BaseHTTPRequestHandler):
     self.respond()
 
   def handle_http(self):
-    if self.path == "/":
+    if self.path == '/':
       status = 200
-      content_type = "text/html; charset=utf-8"
-      response_content = "Site under construction"
-      response_content = bytes(response_content, "UTF-8")
+      content_type = 'text/html; charset=utf-8'
+      response_content = 'Site under construction'
+      response_content = bytes(response_content, 'UTF-8')
       size = len(response_content)
-    elif self.path.startswith("/view"):
+    elif self.path.startswith('/mob'):
+      f = open(os.path.dirname(os.path.realpath(__file__)) + '/html/acemap_mobility.html')
+      status = 200
+      content_type = 'text/html; charset=ISO-8859-1'
+      response_content = f.read()
+      response_content = bytes(response_content, 'UTF-8')
+      size = len(response_content)
+    elif self.path.startswith('/view'):
       f = open(os.path.dirname(os.path.realpath(__file__)) + '/html/acemap_view.html')
       status = 200
-      content_type = "text/html"
+      content_type = 'text/html; charset=ISO-8859-1'
       response_content = f.read()
-      response_content = bytes(response_content, "UTF-8")
+      response_content = bytes(response_content, 'UTF-8')
       size = len(response_content)
     elif self.path.startswith('/json'):
       status = 200
-      content_type = 'application/json'
+      content_type = 'application/json; charset=ISO-8859-1'
       geojson = {
         'type': 'FeatureCollection',
         'features': []
