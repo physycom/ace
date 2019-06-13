@@ -43,25 +43,25 @@ acemap['regione_id']['prov']['provincia_id']['com']['comune_id'] = {
 
 - `acemap_geoupdate.py`
 Update geodata on an *acemap* of italian _comuni_ populating fields: `centroid` and `sez_count`.
- + input: `acemap.json` properly formatted
- + input: `region_shapefile.geojson` as available here https://www.istat.it/it/archivio/104317
- + output: `acemap_RXX.geojson` where `RXX` is the _regione_ shapefile tag (e.g. `R01` is for _Piemonte_)
+  + input: `acemap.json` properly formatted
+  + input: `region_shapefile.geojson` as available here https://www.istat.it/it/archivio/104317
+  + output: `acemap_RXX.geojson` where `RXX` is the _regione_ shapefile tag (e.g. `R01` is for _Piemonte_)
 
 - `aceserver.py`
 Local http server which provides *acemap* json data visualization through GET requests.
- + input: `acemap.json` as produced by previous tools
- + input: address
- + input: port
+  + input: `acemap.json` as produced by previous tools
+  + input: address
+  + input: port
 Access the web page at `http://address:port/view?params` where the string `params` is a concatenation (separator `&`) of string of types:
- + _Regione_ code: `XXX` (e.g. `001`)
- + _Provincia_ code: `XXXYYY` (e.g. `0010001`)
- + _Comune_ code: `XXXYYYZZZ` (e.g. `0010001001`)
+  + _Regione_ code: `XXX` (e.g. `001`)
+  + _Provincia_ code: `XXXYYY` (e.g. `0010001`)
+  + _Comune_ code: `XXXYYYZZZ` (e.g. `0010001001`)
 
 - `acemap_mobupdate.py`
 Update geodata on an *acemap* of italian _comuni_ populating fields: `centroid` and `sez_count`.
- + input: `acemap.json` (properly formatted)
- + input: regex to match file of the form `mobility_YYYYMMDD_HHMM.tsv` (properly formatted mobility data)
- + output: `acemap_RXX.geojson` where `RXX` is the _regione_ shapefile tag (e.g. `R01` is for _Piemonte_)
+  + input: `acemap.json` (properly formatted)
+  + input: regex to match file of the form `mobility_YYYYMMDD_HHMM.tsv` (properly formatted mobility data)
+  + output: `acemap_RXX.geojson` where `RXX` is the _regione_ shapefile tag (e.g. `R01` is for _Piemonte_)
 
 ### Documentazione
 Details of ISTAT databases
