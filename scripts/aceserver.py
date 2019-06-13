@@ -28,11 +28,11 @@ class Server(BaseHTTPRequestHandler):
       response_content = "Site under construction"
       response_content = bytes(response_content, "UTF-8")
       size = len(response_content)
-    if self.path.startswith("/q"):
-      query = self.path.split('?')[1:]
+    elif self.path.startswith("/view"):
+      f = open('acemap_view.html')
       status = 200
-      content_type = "text/plain"
-      response_content = "Query : " + '-'.join(query)
+      content_type = "text/html"
+      response_content = f.read()
       response_content = bytes(response_content, "UTF-8")
       size = len(response_content)
     elif self.path.startswith('/json'):
