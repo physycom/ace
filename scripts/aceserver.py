@@ -30,6 +30,13 @@ class Server(BaseHTTPRequestHandler):
       response_content = 'Site under construction'
       response_content = bytes(response_content, 'UTF-8')
       size = len(response_content)
+    elif self.path.startswith('/anim'):
+      f = open(os.path.dirname(os.path.realpath(__file__)) + '/html/acemap_animation.html')
+      status = 200
+      content_type = 'text/html; charset=ISO-8859-1'
+      response_content = f.read()
+      response_content = bytes(response_content, 'UTF-8')
+      size = len(response_content)
     elif self.path.startswith('/mob'):
       f = open(os.path.dirname(os.path.realpath(__file__)) + '/html/acemap_mobility.html')
       status = 200
@@ -49,13 +56,27 @@ class Server(BaseHTTPRequestHandler):
       content_type = 'application/json; charset=ISO-8859-1'
       geojson = {
         'type': 'FeatureCollection',
-        'features': []
+        'features': [],
+        'times': [
+          '20190101-0000',
+          '20190101-0015',
+          '20190101-0030',
+          '20190101-0045',
+          '20190101-0100'
+        ]
       }
       italy_feat = {
         'type': 'Feature',
         'properties': {
           'code' : 'Italy',
-          'color': 'rgb(255, 0, 0)'
+          'color': 'rgb(255, 0, 0)',
+          'time_cnt': [
+            { 'datetime' : '20190101-0000', 'cnt' : 0.1 },
+            { 'datetime' : '20190101-0015', 'cnt' : 0.5  },
+            { 'datetime' : '20190101-0030', 'cnt' : 1.0  },
+            { 'datetime' : '20190101-0045', 'cnt' : 0.75 },
+            { 'datetime' : '20190101-0100', 'cnt' : 0.1  }
+          ]
         },
         'geometry': {
           'type': 'Point',

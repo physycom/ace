@@ -10,8 +10,7 @@
   <body>
     <div id="map" class="map"></div>
     <script>
-
-/////////// BEGING DYNAMIC CONTENT
+      // parse current url to construct proper acemap json fetching url
       var url = window.location.href
       var baseurl = url.substring(0, url.lastIndexOf('/'));
 //      console.log('url     : ' + url)
@@ -24,6 +23,7 @@
         params = ''
 //      console.log('params : ' + params)
 
+      // perform GET request (may raise warnings or even CORS errors)
       var jsonurl = baseurl + '/json' + params
       function Get(yourUrl){
         var Httpreq = new XMLHttpRequest(); // a new request
@@ -35,12 +35,10 @@
 //      console.log(j)
       var geojsonObject = JSON.parse(j);
 
-/////////// END DYNAMIC CONTENT
-
       // set style function to parse geojson content
       var styleFunction = function(feature) {
         type = feature.getGeometry().getType()
-        if (type == 'Point' || type == 'MultiPoint') {
+        if (type == 'Point' || type == 'MultiPoint') { // point style
           var style = new ol.style.Style({
             image : new ol.style.Circle({
               radius: 3,
@@ -57,7 +55,7 @@
           });
           return style;
         }
-        else if ( type == 'Polygon' || type == 'MultiPolygon'){
+        else if ( type == 'Polygon' || type == 'MultiPolygon'){ // polygon style
           var style = new ol.style.Style({
             stroke: new ol.style.Stroke({
               color: 'black',
@@ -92,15 +90,10 @@
         style: styleFunction
       });
 
-      // create tile layer
-      var tilelayer = new ol.layer.Tile({
-        source: new ol.source.OSM()
-      });
-
       // create map
       var map = new ol.Map({
         layers: [
-          tilelayer,
+          new ol.layer.Tile({ source: new ol.source.OSM() }),
           vectorlayer
         ],
         target: 'map',

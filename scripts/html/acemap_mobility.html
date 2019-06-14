@@ -39,7 +39,7 @@
         }]
       };
 
-      // create vector layer source
+      // create vector source for layer
       var vectorSource = new ol.source.Vector({
         features: (new ol.format.GeoJSON({
           defaultDataProjection :'EPSG:4326',
@@ -57,21 +57,10 @@
         }
       });
 
-      // create vector layer
-      var vectorlayer = new ol.layer.Vector({
-        source: vectorSource
-      });
-
-      // create tile layer
-      var tilelayer = new ol.layer.Tile({
-        source: new ol.source.OSM()
-      });
-
       // create map
       var map = new ol.Map({
         layers: [
-          tilelayer,
-          //vectorlayer,
+          new ol.layer.Tile({ source: new ol.source.OSM() }),
           vectorHeatmap
         ],
         target: 'map'
