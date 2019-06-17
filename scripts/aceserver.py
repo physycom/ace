@@ -24,7 +24,22 @@ class Server(BaseHTTPRequestHandler):
     self.respond()
 
   def handle_http(self):
-    if self.path == '/':
+    if self.path.endswith('.html'):
+      htmlfile = self.path.split('/')[-1]
+      try:
+        f = open(os.path.dirname(os.path.realpath(__file__)) + '/html/' + htmlfile)
+        status = 200
+        content_type = 'text/html; charset=ISO-8859-1'
+        response_content = f.read()
+        response_content = bytes(response_content, 'UTF-8')
+        size = len(response_content)
+      except:
+        status = 404
+        content_type = "text/plain"
+        response_content = "404 Url not found."
+        response_content = bytes(response_content, "UTF-8")
+        size = len(response_content)
+    elif self.path == '/':
       status = 200
       content_type = 'text/html; charset=utf-8'
       response_content = 'Site under construction'
@@ -94,18 +109,13 @@ class Server(BaseHTTPRequestHandler):
         scale = 0 if len(params) == 1 else ( i * 255 ) // (len(params)-1)
         color = cm.jet( scale )
         color = 'rgba(' + ','.join([ str(int(c*255)) for c in color]) + ')'
-#        print(color)
         if len(p) == 0:
-#          print('Match 0 digit : -' + p + '-')
           continue
         elif re.search(r'^\d{3}(?!\d)', p):
-#          print('Match 3 digit : ' + p)
           reg = str(int(p))
           for provid, prov in self.istat[reg]['prov'].items():
             try:
-#              print(provid, prov['name'])
               for k,v in prov['com'].items():
-#                print('--- ',k,v['name'])
                 empty_feat = {
                   'type': 'Feature',
                   'properties': {
@@ -127,7 +137,6 @@ class Server(BaseHTTPRequestHandler):
               print('No geodata for ' + reg + '|' + provid)
               continue
         elif re.search(r'^\d{6}(?!\d)', p):
-#          print('Match 6 digit : ' + p)
           reg = str(int(p[0:3]))
           prov = str(int(p[3:6]))
           try:
@@ -153,7 +162,6 @@ class Server(BaseHTTPRequestHandler):
             print('No geodata for ' + reg + '|' + prov)
             continue
         elif re.search(r'^\d{9}(?!\d)', p):
-#          print('Match 9 digit : ' + p)
           reg = str(int(p[0:3]))
           prov = str(int(p[3:6]))
           com = str(int(p[6:9]))
@@ -179,7 +187,6 @@ class Server(BaseHTTPRequestHandler):
           except:
             print('No acemap match for : ' + reg + '|' + prov + '|' + com)
             continue
-#          print('Match for ' + p + ' : ' + name + ' ' + str(c[0]) + ' ' + str(c[1]))
         else:
           print('No query match : ' + p)
 

@@ -1,0 +1,16 @@
+<head>
+  <!-- Plotly.js -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body>
+  <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+  <script>
+    var data = [{
+      x: ['giraffes', 'orangutans', 'monkeys'],
+      y: [20, 14, 23],
+      type: 'bar'
+    }];
+    Plotly.newPlot('myDiv', data, {}, {showSendToCloud:true});
+  </script>
+</body>

@@ -2,8 +2,8 @@
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--acein", help="original acemap JSON file", required=True)
-parser.add_argument("-s", "--shape", help="ISTAT shape geojson (e.g. R01_11_WGS84.geojson)", required=True)
+parser.add_argument('-i', '--acein', help='original acemap JSON file', required=True)
+parser.add_argument('-s', '--shape', help='ISTAT shape geojson (e.g. R01_11_WGS84.geojson)', required=True)
 args = parser.parse_args()
 
 import numpy as np
@@ -37,7 +37,7 @@ for f in shape['features']:
     elif len(f['geometry']['coordinates'][0]) > 1:
       sez_poly = np.array([f['geometry']['coordinates'][0][0]])
   else:
-    print("ERROR:",pc, "unhandled feature type", sez_type)
+    print('ERROR:', pc, 'unhandled feature type', sez_type)
     continue
 
   sez_lonm = sez_poly[0,:,0].sum() / len(sez_poly[0,:,0])
@@ -59,12 +59,39 @@ for f in shape['features']:
   c[1] = (n*c[1] + sez_latm)/(n+1)
   istat['reg'][reg]['prov'][prov]['com'][com]['centroid'] = c
 
+# count missing geodata
+acemap_cnt = 0
+acemap_nogeo = 0
+for rid, prov in istat['reg'].items():
+  for pid, com in prov['prov'].items():
+    for cid, obj in com['com'].items():
+      acemap_cnt += 1
+      if obj['centroid'] == [0,0]:
+        acemap_nogeo += 1
 
-print("Parsed input region     :", args.shape, reg_tag, istat['reg'][str(int(reg_tag[1:]))]['name'])
-print("ISTAT tot sezioni       :", len(shape['features']))
-print("ISTAT fail prov-match   :", prov_fail)
-print("ISTAT fail comune-match :", com_fail)
+print('Parsed input region     :', args.shape, reg_tag, istat['reg'][str(int(reg_tag[1:]))]['name'])
+print('ISTAT tot sezioni       :', len(shape['features']))
+print('ISTAT fail prov-match   :', prov_fail)
+print('ISTAT fail comune-match :', com_fail)
+print('ACEMAP no geodata       :', acemap_nogeo,'/',acemap_cnt)
 
+if acemap_nogeo/acemap_cnt < 0.035:
+  removed = 0
+  survived = 0
+  print('Performing clean up operations')
+  for rid, prov in istat['reg'].items():
+    for pid, com in prov['prov'].items():
+      for cid in list(com['com'].keys()):
+        if com['com'][cid]['centroid'] == [0,0]:
+          removed += 1
+          del com['com'][cid]
+        else:
+          survived += 1
+
+  print('ACEMAP removed        :', removed)
+  print('ACEMAP survived       :', survived)
+
+print('************************************************')
 out = args.acein.split('.')[0] + '_' + reg_tag
 with open(out + '-hr.json', 'w') as f:
   json.dump(istat, f, indent=2,  ensure_ascii=False)
