@@ -28,11 +28,15 @@ for m in mobfiles:
   #print(mob.shape)
 
   for rid, prov in istat.items():
+    rtag = '{:0>3}'.format(rid)
+    mob[rtag] = mob[ [m for m in mob.columns if m.startswith(rtag)] ].sum(1)
     for pid, com in prov['prov'].items():
+      ptag = '{:0>3}{:0>3}'.format(rid,pid)
+      mob[ptag] = mob[ [m for m in mob.columns if m.startswith(ptag)] ].sum(1)
       for cid, c in com['com'].items():
-        acetag = '{:0>3}{:0>3}{:0>3}'.format(rid,pid,cid)
-        rtag = '{:0>3}'.format(rid)
-        mob[rtag] = mob[ [m for m in mob.columns if m.startswith(rtag)] ].sum(1)
+        ctag = '{:0>3}{:0>3}{:0>3}'.format(rid,pid,cid)
+        mob[ctag] = mob[ [m for m in mob.columns if m.startswith(ctag)] ].sum(1)
+
 #        print(acetag)
 
 #  print(mob.shape)
@@ -43,11 +47,15 @@ for m in mobfiles:
   mobdata.loc[datetime] = pd.Series(mob.sum())
 datetimes.sort()
 
-# Update acemap timed counters values
-for rid, prov in istat.items():
-  prov['time_count'] = {}
-  for dt in datetimes:
-    prov['time_count'][dt] = mobdata.loc[dt, '{:0>3}'.format(rid)]
+# update acemap timed counters values
+#istat['times'] = datetimes
+for dt in datetimes:
+  for rid, prov in istat.items():
+    prov.setdefault('time_count', {}).update({dt: mobdata.loc[dt, '{:0>3}'.format(rid)]})
+    for pid, com in prov['prov'].items():
+      com.setdefault('time_count', {}).update({dt: mobdata.loc[dt, '{:0>3}{:0>3}'.format(rid,pid)]})
+      for cid, obj in com['com'].items():
+        obj.setdefault('time_count', {}).update({dt: mobdata.loc[dt, '{:0>3}{:0>3}{:0>3}'.format(rid,pid,cid)]})
 
 #print(mobdata)
 #print(mobdata.loc[datetimes[0],'019'])
