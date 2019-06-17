@@ -7,6 +7,24 @@ import re
 from matplotlib import cm
 
 acemapfile = ''
+italy_feat = {
+  'type': 'Feature',
+  'properties': {
+    'code' : 'Italy',
+    'color': 'rgb(255, 0, 0)',
+    'time_cnt': [
+      { 'datetime' : '20190101-0000', 'cnt' : 0.1 },
+      { 'datetime' : '20190101-0015', 'cnt' : 0.5  },
+      { 'datetime' : '20190101-0030', 'cnt' : 1.0  },
+      { 'datetime' : '20190101-0045', 'cnt' : 0.75 },
+      { 'datetime' : '20190101-0100', 'cnt' : 0.1  }
+    ]
+  },
+  'geometry': {
+    'type': 'Point',
+    'coordinates': [12.833333333333334, 42.8333333] # italy center
+  }
+}
 
 class Server(BaseHTTPRequestHandler):
   def __init__(self, *args):
@@ -23,52 +41,73 @@ class Server(BaseHTTPRequestHandler):
   def do_GET(self):
     self.respond()
 
+  def serve_html(self, filename):
+    f = open(os.path.dirname(os.path.realpath(__file__)) + '/html/' + filename)
+    status = 200
+    content_type = 'text/html; charset=ISO-8859-1'
+    response_content = f.read()
+    response_content = bytes(response_content, 'UTF-8')
+    size = len(response_content)
+    return status, content_type, response_content, size
+
+  def serve_404(self):
+    status = 404
+    content_type = "text/plain"
+    response_content = "404 Url not found."
+    response_content = bytes(response_content, "UTF-8")
+    size = len(response_content)
+    return status, content_type, response_content, size
+
+  def serve_json(self, geojson):
+    status = 200
+    content_type = 'application/json; charset=ISO-8859-1'
+    response_content = json.dumps(geojson)
+    response_content = bytes(response_content, "UTF-8")
+    size = len(response_content)
+    return status, content_type, response_content, size
+
+  def extract_geofeature_9digit(self, features, tag, color):
+    reg = str(int(tag[0:3]))
+    prov = str(int(tag[3:6]))
+    com = str(int(tag[6:9]))
+    name = ''
+    c = [0,0]
+    try:
+      name = self.istat['reg'][reg]['prov'][prov]['com'][com]['name']
+      c = self.istat['reg'][reg]['prov'][prov]['com'][com]['centroid']
+      empty_feat = {
+        'type': 'Feature',
+        'properties': {
+          'code' : '',
+          'color': 'rgb(255, 0, 0)'
+        },
+        'geometry': {
+          'type': 'Point',
+          'coordinates': []
+        }
+      }
+      empty_feat['properties']['code'] = name
+      empty_feat['geometry']['coordinates'] = c
+      features.append(empty_feat)
+    except:
+      print('No acemap match for : ' + reg + '|' + prov + '|' + com)
+
   def handle_http(self):
     if self.path.endswith('.html'):
-      htmlfile = self.path.split('/')[-1]
       try:
-        f = open(os.path.dirname(os.path.realpath(__file__)) + '/html/' + htmlfile)
-        status = 200
-        content_type = 'text/html; charset=ISO-8859-1'
-        response_content = f.read()
-        response_content = bytes(response_content, 'UTF-8')
-        size = len(response_content)
+        htmlfile = self.path.split('/')[-1]
+        status, content_type, response_content, size = self.serve_html(htmlfile)
       except:
-        status = 404
-        content_type = "text/plain"
-        response_content = "404 Url not found."
-        response_content = bytes(response_content, "UTF-8")
-        size = len(response_content)
+        status, content_type, response_content, size = self.serve_404()
     elif self.path == '/':
-      status = 200
-      content_type = 'text/html; charset=utf-8'
-      response_content = 'Site under construction'
-      response_content = bytes(response_content, 'UTF-8')
-      size = len(response_content)
+      status, content_type, response_content, size = self.serve_html('index.html')
     elif self.path.startswith('/anim'):
-      f = open(os.path.dirname(os.path.realpath(__file__)) + '/html/acemap_animation.html')
-      status = 200
-      content_type = 'text/html; charset=ISO-8859-1'
-      response_content = f.read()
-      response_content = bytes(response_content, 'UTF-8')
-      size = len(response_content)
+      status, content_type, response_content, size = self.serve_html('acemap_animation.html')
     elif self.path.startswith('/mob'):
-      f = open(os.path.dirname(os.path.realpath(__file__)) + '/html/acemap_mobility.html')
-      status = 200
-      content_type = 'text/html; charset=ISO-8859-1'
-      response_content = f.read()
-      response_content = bytes(response_content, 'UTF-8')
-      size = len(response_content)
+      status, content_type, response_content, size = self.serve_html('acemap_mobility.html')
     elif self.path.startswith('/view'):
-      f = open(os.path.dirname(os.path.realpath(__file__)) + '/html/acemap_view.html')
-      status = 200
-      content_type = 'text/html; charset=ISO-8859-1'
-      response_content = f.read()
-      response_content = bytes(response_content, 'UTF-8')
-      size = len(response_content)
+      status, content_type, response_content, size = self.serve_html('acemap_view.html')
     elif self.path.startswith('/json'):
-      status = 200
-      content_type = 'application/json; charset=ISO-8859-1'
       geojson = {
         'type': 'FeatureCollection',
         'features': [],
@@ -79,24 +118,6 @@ class Server(BaseHTTPRequestHandler):
           '20190101-0045',
           '20190101-0100'
         ]
-      }
-      italy_feat = {
-        'type': 'Feature',
-        'properties': {
-          'code' : 'Italy',
-          'color': 'rgb(255, 0, 0)',
-          'time_cnt': [
-            { 'datetime' : '20190101-0000', 'cnt' : 0.1 },
-            { 'datetime' : '20190101-0015', 'cnt' : 0.5  },
-            { 'datetime' : '20190101-0030', 'cnt' : 1.0  },
-            { 'datetime' : '20190101-0045', 'cnt' : 0.75 },
-            { 'datetime' : '20190101-0100', 'cnt' : 0.1  }
-          ]
-        },
-        'geometry': {
-          'type': 'Point',
-          'coordinates': [12.833333333333334, 42.8333333] # italy center
-        }
       }
 
       params = self.path.split('?')
@@ -113,7 +134,7 @@ class Server(BaseHTTPRequestHandler):
           continue
         elif re.search(r'^\d{3}(?!\d)', p):
           reg = str(int(p))
-          for provid, prov in self.istat[reg]['prov'].items():
+          for provid, prov in self.istat['reg'][reg]['prov'].items():
             try:
               for k,v in prov['com'].items():
                 empty_feat = {
@@ -129,7 +150,7 @@ class Server(BaseHTTPRequestHandler):
                 }
                 empty_feat['properties']['code'] = v['name']
                 if v['centroid'] == [0,0]:
-                  print('No geodata for ' + v['name'] + '(' + reg + '|' + prov + '|' + k + ')')
+                  print('Null geodata for ' + v['name'] + '(' + reg + '|' + prov + '|' + k + ')')
                   continue
                 empty_feat['geometry']['coordinates'] = v['centroid']
                 geojson['features'].append(empty_feat)
@@ -140,7 +161,7 @@ class Server(BaseHTTPRequestHandler):
           reg = str(int(p[0:3]))
           prov = str(int(p[3:6]))
           try:
-            for k,v in self.istat[reg]['prov'][prov]['com'].items():
+            for k,v in self.istat['reg'][reg]['prov'][prov]['com'].items():
               empty_feat = {
                 'type': 'Feature',
                 'properties': {
@@ -154,54 +175,24 @@ class Server(BaseHTTPRequestHandler):
               }
               empty_feat['properties']['code'] = v['name']
               if v['centroid'] == [0,0]:
-                print('No geodata for ' + v['name'] + '(' + reg + '|' + prov + '|' + k + ')')
+                print('Null geodata for ' + v['name'] + '(' + reg + '|' + prov + '|' + k + ')')
                 continue
               empty_feat['geometry']['coordinates'] = v['centroid']
               geojson['features'].append(empty_feat)
           except:
-            print('No geodata for ' + reg + '|' + prov)
+            print('No match for ' + reg + '|' + prov)
             continue
         elif re.search(r'^\d{9}(?!\d)', p):
-          reg = str(int(p[0:3]))
-          prov = str(int(p[3:6]))
-          com = str(int(p[6:9]))
-          name = ''
-          c = [0,0]
-          try:
-            name = self.istat[reg]['prov'][prov]['com'][com]['name']
-            c = self.istat[reg]['prov'][prov]['com'][com]['centroid']
-            empty_feat = {
-              'type': 'Feature',
-              'properties': {
-                'code' : '',
-                'color': 'rgb(255, 0, 0)'
-              },
-              'geometry': {
-                'type': 'Point',
-                'coordinates': []
-              }
-            }
-            empty_feat['properties']['code'] = name
-            empty_feat['geometry']['coordinates'] = c
-            geojson['features'].append(empty_feat)
-          except:
-            print('No acemap match for : ' + reg + '|' + prov + '|' + com)
-            continue
+          self.extract_geofeature_9digit(geojson['features'], p, color)
         else:
           print('No query match : ' + p)
 
       if len(geojson['features']) == 0:
         geojson['features'].append(italy_feat)
 
-      response_content = json.dumps(geojson)
-      response_content = bytes(response_content, "UTF-8")
-      size = len(response_content)
+      status, content_type, response_content, size = self.serve_json(geojson)
     else:
-      status = 404
-      content_type = "text/plain"
-      response_content = "404 Url not found."
-      response_content = bytes(response_content, "UTF-8")
-      size = len(response_content)
+      status, content_type, response_content, size = self.serve_404()
 
     self.send_response(status)
     self.send_header('Content-type', content_type)
@@ -214,30 +205,25 @@ class Server(BaseHTTPRequestHandler):
     self.wfile.write(content)
 
 
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument('-a', '--server-address', help='http server address', default='localhost')
-parser.add_argument('-p', '--server-port', help='http server port', default=9999, type=int)
-parser.add_argument('-m', '--acemap', help='acemap json file', required=True)
-args = parser.parse_args()
-acemapfile = args.acemap
-
-import time
-from http.server import HTTPServer
-
-HOST_NAME = args.server_address
-PORT_NUMBER = args.server_port
-
 if __name__ == '__main__':
+  import argparse
+  parser = argparse.ArgumentParser()
+  parser.add_argument('-a', '--server-address', help='http server address', default='localhost')
+  parser.add_argument('-p', '--server-port', help='http server port', default=9999, type=int)
+  parser.add_argument('-m', '--acemap', help='acemap json file', required=True)
+  args = parser.parse_args()
+  acemapfile = args.acemap
+
+  import time
+  from http.server import HTTPServer
+
+  HOST_NAME = args.server_address
+  PORT_NUMBER = args.server_port
+
   httpd = HTTPServer((HOST_NAME, PORT_NUMBER), Server)
   print(time.asctime(), 'Server UP - %s:%s' % (HOST_NAME, PORT_NUMBER))
   try:
     httpd.serve_forever()
   except KeyboardInterrupt:
-    pass
-  httpd.server_close()
-print(time.asctime(), 'Server DOWN - %s:%s' % (HOST_NAME, PORT_NUMBER))
-
-
-
-
+    httpd.server_close()
+    print(time.asctime(), 'Server DOWN - %s:%s' % (HOST_NAME, PORT_NUMBER))
