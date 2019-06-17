@@ -31,7 +31,6 @@ for f in shape['features']:
       sez_poly = np.array(f['geometry']['coordinates'])
     elif len(f['geometry']['coordinates'][0]) > 1:
       sez_poly = np.array([f['geometry']['coordinates'][0]])
-    #print(sez_type,"-",pc, sez_poly.shape)
   elif sez_type == 'MultiPolygon':
     if len(f['geometry']['coordinates'][0]) == 1:
       sez_poly = np.array(f['geometry']['coordinates'][0])
@@ -44,23 +43,24 @@ for f in shape['features']:
   sez_lonm = sez_poly[0,:,0].sum() / len(sez_poly[0,:,0])
   sez_latm = sez_poly[0,:,1].sum() / len(sez_poly[0,:,1])
 
-  if prov not in istat[reg]['prov']:
+  if prov not in istat['reg'][reg]['prov']:
     prov_fail += 1
     continue
   else:
-    if com not in istat[reg]['prov'][prov]['com']:
+    if com not in istat['reg'][reg]['prov'][prov]['com']:
       com_fail += 1
       continue
 
-  n = istat[reg]['prov'][prov]['com'][com]['sez_count']
-  istat[reg]['prov'][prov]['com'][com]['sez_count'] += 1
+  n = istat['reg'][reg]['prov'][prov]['com'][com]['sez_count']
+  istat['reg'][reg]['prov'][prov]['com'][com]['sez_count'] += 1
 
-  c = istat[reg]['prov'][prov]['com'][com]['centroid']
+  c = istat['reg'][reg]['prov'][prov]['com'][com]['centroid']
   c[0] = (n*c[0] + sez_lonm)/(n+1)
   c[1] = (n*c[1] + sez_latm)/(n+1)
-  istat[reg]['prov'][prov]['com'][com]['centroid'] = c
+  istat['reg'][reg]['prov'][prov]['com'][com]['centroid'] = c
 
-print("Parsed input region     :", args.shape, reg_tag, istat[str(int(reg_tag[1:]))]['name'])
+
+print("Parsed input region     :", args.shape, reg_tag, istat['reg'][str(int(reg_tag[1:]))]['name'])
 print("ISTAT tot sezioni       :", len(shape['features']))
 print("ISTAT fail prov-match   :", prov_fail)
 print("ISTAT fail comune-match :", com_fail)

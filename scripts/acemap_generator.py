@@ -8,54 +8,54 @@ args = parser.parse_args()
 import pandas as pd
 import numpy as np
 
-# Import ISTAT comuni
+# Import ISTAT comuni selected columns
+dfistat = pd.read_csv(args.istat, sep=';', encoding='latin-1',
+  usecols=[
+    'Codice Regione',
+    'Codice Provincia (1)',
+    'Progressivo del Comune (2)',
+    'Denominazione provincia',
+    u'Denominazione Città metropolitana',
+    'Denominazione in italiano',
+    'Denominazione regione'
+  ]
+)
+dfistat['prov_name'] = np.where(dfistat['Denominazione provincia']=='-', dfistat[u'Denominazione Città metropolitana'], dfistat['Denominazione provincia'])
+dfistat.drop(columns=['Denominazione provincia', u'Denominazione Città metropolitana'])
+dfistat.dropna(subset = ['Codice Regione'], inplace=True)
+
+
 # and create map
 # istat[regid]['prov'][provid]['com'][comid] = {
 #  'name'      : 'Bologna'
 #  'centroid'  : [0,0]
 #  'sez_count' : 0
 #}
-dfistat = pd.read_csv(args.istat, sep=';', encoding='latin-1')
-dfistat.dropna(subset = ['Codice Regione'], inplace=True)
+import collections
+def empty_nested_dict(dim=3):
+  if dim==1:
+    return collections.defaultdict(int)
+  else:
+    return collections.defaultdict(lambda: empty_nested_dict(dim-1))
 
-istat = {}
+istat = empty_nested_dict(7)
 for index, row in dfistat.iterrows():
   regid = int(row['Codice Regione'])
-  try:
-    provid = int(row['Codice Provincia (1)'])
-    provname = row['Denominazione provincia']
+  provid = int(row['Codice Provincia (1)'])
+  comid = int(row['Progressivo del Comune (2)'])
 
-    comid = int(row['Progressivo del Comune (2)'])
-    comname = row['Denominazione in italiano']
-  except:
-    print(row)
-    continue
-
-  if regid not in istat:
-    istat[regid] = {}
-    istat[regid]['name'] = row['Denominazione regione']
-    istat[regid]['prov'] = {}
-
-  if provid not in istat[regid]['prov']:
-    istat[regid]['prov'][provid] = {}
-    istat[regid]['prov'][provid]['com'] = {}
-    if provname != '-':
-      istat[regid]['prov'][provid]['name'] = provname
-    else:
-      istat[regid]['prov'][provid]['name'] = row[u'Denominazione Città metropolitana']
-
-  if comid not in istat[regid]['prov'][provid]['com']:
-    istat[regid]['prov'][provid]['com'][comid] = {}
-    istat[regid]['prov'][provid]['com'][comid]['name'] = comname
-    istat[regid]['prov'][provid]['com'][comid]['centroid'] = [0,0]
-    istat[regid]['prov'][provid]['com'][comid]['sez_count'] = 0
+  istat['reg'][regid]['name'] = row['Denominazione regione']
+  istat['reg'][regid]['prov'][provid]['name'] = row['prov_name']
+  istat['reg'][regid]['prov'][provid]['com'][comid]['name'] = row['Denominazione in italiano']
+  istat['reg'][regid]['prov'][provid]['com'][comid]['centroid'] = [0,0]
+  istat['reg'][regid]['prov'][provid]['com'][comid]['sez_count'] = 0
 
 # Print istat map on stdout
 def view(verbose):
   reg_tot = 0
   prov_tot = 0
   com_tot = 0
-  for r, v in istat.items():
+  for r, v in istat['reg'].items():
     reg_tot += 1
     if verbose:
       print('- {:03d} - {:<35s} ({: 2d}) '.format(r, v['name'], len(v['prov'])))
