@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Marker Animation</title>
+    <title>Mobility heatmap</title>
     <link rel="stylesheet" href="https://openlayers.org/en/v5.3.0/css/ol.css" type="text/css">
     <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
     <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.2.0/build/ol.js"></script>
@@ -9,31 +9,31 @@
 
   </head>
   <body>
-    <div id="map" class="map"></div>
+    <div id="map" class="map" style="height:80vh; width:70vw"></div>
     <div id="date-time">Date-time: none</div>
-    <label id="lbl-time-input" for="time-input">time step: 1s&nbsp;</label>
-    <input id="time-input" type="range" min="100" max="10000" step="100" value="1000" onchange="time_input_update()">
+    <div id="ranges">Ranges: none</div>
+    <label id="lbl-time-input" for="time-input">time step: 50ms&nbsp;</label>
+    <input id="time-input" type="range" min="10" max="1000" step="50" value="50" onchange="time_input_update()">
     <script>
       function time_input_update(){
-        console.log('time step: ' + document.getElementById('time-input').value / 1000 + 's');
-        document.getElementById('lbl-time-input').innerHTML = 'time step: ' + document.getElementById('time-input').value / 1000 + 's';
+        var ts = 'time step: ' + document.getElementById('time-input').value + 'ms   ';
+        document.getElementById('lbl-time-input').innerHTML = ts;
       }
     </script>
     <button id="start-animation">Start Animation</button>
+    <button id="backward-animation">-</button>
+    <button id="forward-animation">+</button>
     <script>
 
       // parse current url to construct proper acemap json fetching url
       var url = window.location.href
       var baseurl = url.substring(0, url.lastIndexOf('/'));
-//      console.log('url     : ' + url)
-//      console.log('baseurl : ' + baseurl)
 
       var params = window.location.href.split('?')
       if ( params.length == 2 )
         params = '?' + params[params.length-1]
       else
         params = ''
-//      console.log('params : ' + params)
 
       // perform GET request (may raise warnings or even CORS errors)
       var jsonurl = baseurl + '/json' + params
@@ -48,8 +48,17 @@
       var geojsonObject = JSON.parse(j);
       var timeSlice = geojsonObject['times'].length;
 
-      console.log("time_cnt : ");
-      console.log(geojsonObject['features'][0]['properties']['time_cnt'][1]);
+//      console.log("time_cnt : ");
+//      console.log(geojsonObject['features'][0]['properties']['time_cnt'][1]);
+
+      var minCnt = -10
+      var maxCnt = 1000
+      document.getElementById('ranges').innerHTML = 'Range: ' + minCnt + ' - ' + maxCnt;
+      function weightHeatmap(feature) {
+//        console.log("mv : " + feature.get('time_cnt')[timeIdx]);
+        var val = feature.get('time_cnt')[timeIdx] == null ? 0.1 : feature.get('time_cnt')[timeIdx];
+        return (val - minCnt) / (maxCnt - minCnt);
+      }
 
       // create vector layer source
       var vectorSource = new ol.source.Vector({
@@ -64,11 +73,8 @@
       var heatMaplayer = new ol.layer.Heatmap({
         source: vectorSource,
         blur: 10,
-        radius: 50,
-        weight: function(feature){
-          console.log("mv : " + feature.get('time_cnt')[timeIdx]['cnt']);
-          return feature.get('time_cnt')[timeIdx]['cnt'] == null ? 0.1 : feature.get('time_cnt')[timeIdx]['cnt'];
-        }
+        radius: 10,
+        weight: weightHeatmap
       });
 
       var map = new ol.Map({
@@ -87,27 +93,28 @@
         map.getView().setZoom(7);
       }
       else{
-        var extent = vectorlayer.getSource().getExtent();
+        var extent = heatMaplayer.getSource().getExtent();
         map.getView().fit(extent, map.getSize());
-        map.getView().setZoom(map.getView().getZoom()-1);
+        map.getView().setZoom(map.getView().getZoom()+0.8);
       }
 
       // callback
       var animating = false;
-      var timeInterval, now;
+      var timeInterval, timeNow;
       var timeInput = document.getElementById('time-input');
-      var startButton = document.getElementById('start-animation');
 
       var moveFeature = function(event) {
         var vectorContext = event.vectorContext;
         var frameState = event.frameState;
 
         if (animating) {
-          var elapsedTime = frameState.time - now;
+          var elapsedTime = frameState.time - timeNow;
           timeIdx = Math.floor(elapsedTime / timeInterval);
           if (timeIdx > timeSlice - 1) {
-            stopAnimation(true);
-            return;
+            //stopAnimation(true);
+            //return;
+            timeNow = new Date().getTime();
+            timeIdx = 0
           }
           document.getElementById('date-time').innerHTML = 'Date-time: ' + geojsonObject['times'][timeIdx];
         }
@@ -115,18 +122,20 @@
         map.render();
       };
 
+      var startButton = document.getElementById('start-animation');
       function startAnimation() {
         if (animating) {
           stopAnimation(false);
         } else {
           animating = true;
-          now = new Date().getTime();
+          timeNow = new Date().getTime();
           timeInterval = timeInput.value;
           startButton.textContent = 'Cancel Animation';
           map.on('postcompose', moveFeature);
           map.render();
         }
       }
+      startButton.addEventListener('click', startAnimation, false);
 
       function stopAnimation(ended) {
         animating = false;
@@ -137,7 +146,6 @@
         map.un('postcompose', moveFeature);
       }
 
-      startButton.addEventListener('click', startAnimation, false);
     </script>
   </body>
 </html>

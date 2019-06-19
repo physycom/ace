@@ -13,11 +13,11 @@ italy_feat = {
     'code' : 'Italy',
     'color': 'rgb(255, 0, 0)',
     'time_cnt': [
-      { 'datetime' : '20190101-0000', 'cnt' : 0.1 },
-      { 'datetime' : '20190101-0015', 'cnt' : 0.5  },
-      { 'datetime' : '20190101-0030', 'cnt' : 1.0  },
-      { 'datetime' : '20190101-0045', 'cnt' : 0.75 },
-      { 'datetime' : '20190101-0100', 'cnt' : 0.1  }
+      0.1,
+      0.5,
+      1.0,
+      0.75,
+      0.1
     ]
   },
   'geometry': {
@@ -25,6 +25,13 @@ italy_feat = {
     'coordinates': [12.833333333333334, 42.8333333] # italy center
   }
 }
+default_times = [
+  '20190101-0000',
+  '20190101-0015',
+  '20190101-0030',
+  '20190101-0045',
+  '20190101-0100'
+]
 
 class Server(BaseHTTPRequestHandler):
   def __init__(self, *args):
@@ -73,24 +80,44 @@ class Server(BaseHTTPRequestHandler):
     name = ''
     c = [0,0]
     try:
-      name = self.istat['reg'][reg]['prov'][prov]['com'][com]['name']
-      c = self.istat['reg'][reg]['prov'][prov]['com'][com]['centroid']
+      comobj = self.istat['reg'][reg]['prov'][prov]['com'][com]
       empty_feat = {
         'type': 'Feature',
         'properties': {
           'code' : '',
-          'color': 'rgb(255, 0, 0)'
+          'color': color
         },
         'geometry': {
           'type': 'Point',
           'coordinates': []
         }
       }
-      empty_feat['properties']['code'] = name
-      empty_feat['geometry']['coordinates'] = c
+      empty_feat['properties']['code'] = comobj['name']
+      if comobj['centroid'] == [0,0]:
+        print('Null geodata for : ' + reg + '|' + prov + '|' + com + ' ' + comobj['name'])
+        return
+      empty_feat['geometry']['coordinates'] = comobj['centroid']
+
+      if 'time_count' in comobj:
+        empty_feat['properties']['time_cnt'] = comobj['time_count']
       features.append(empty_feat)
     except:
       print('No acemap match for : ' + reg + '|' + prov + '|' + com)
+
+  def extract_geofeature_6digit(self, features, tag, color):
+    reg = str(int(tag[0:3]))
+    prov = str(int(tag[3:6]))
+    for com in self.istat['reg'][reg]['prov'][prov]['com'].keys():
+      self.extract_geofeature_9digit(features, tag + '{:0>3}'.format(com), color)
+
+  def extract_geofeature_3digit(self, features, tag, color):
+    reg = str(int(tag))
+    for prov in self.istat['reg'][reg]['prov'].keys():
+      self.extract_geofeature_6digit(features, tag + '{:0>3}'.format(prov), color)
+
+  def extract_geofeature_italy(self, features, tag, color):
+    for reg in self.istat['reg'].keys():
+      self.extract_geofeature_3digit(features, '{:0>3}'.format(reg), color)
 
   def handle_http(self):
     if self.path.endswith('.html'):
@@ -108,87 +135,41 @@ class Server(BaseHTTPRequestHandler):
     elif self.path.startswith('/view'):
       status, content_type, response_content, size = self.serve_html('acemap_view.html')
     elif self.path.startswith('/json'):
-      geojson = {
-        'type': 'FeatureCollection',
-        'features': [],
-        'times': [
-          '20190101-0000',
-          '20190101-0015',
-          '20190101-0030',
-          '20190101-0045',
-          '20190101-0100'
-        ]
-      }
-
       params = self.path.split('?')
       if len(params) == 2:
         params = params[1].split('&')
       else:
         params = ['']
 
+      geojson = {
+        'type': 'FeatureCollection',
+        'features': [],
+      }
+
       for i,p in enumerate(params):
         scale = 0 if len(params) == 1 else ( i * 255 ) // (len(params)-1)
-        color = cm.jet( scale )
-        color = 'rgba(' + ','.join([ str(int(c*255)) for c in color]) + ')'
+        color = 'rgba(' + ','.join([ str(int(c*255)) for c in cm.jet(scale)]) + ')'
         if len(p) == 0:
           continue
         elif re.search(r'^\d{3}(?!\d)', p):
-          reg = str(int(p))
-          for provid, prov in self.istat['reg'][reg]['prov'].items():
-            try:
-              for k,v in prov['com'].items():
-                empty_feat = {
-                  'type': 'Feature',
-                  'properties': {
-                    'code' : '',
-                    'color': color
-                  },
-                  'geometry': {
-                    'type': 'Point',
-                    'coordinates': []
-                  }
-                }
-                empty_feat['properties']['code'] = v['name']
-                if v['centroid'] == [0,0]:
-                  print('Null geodata for ' + v['name'] + '(' + reg + '|' + prov + '|' + k + ')')
-                  continue
-                empty_feat['geometry']['coordinates'] = v['centroid']
-                geojson['features'].append(empty_feat)
-            except:
-              print('No geodata for ' + reg + '|' + provid)
-              continue
+          self.extract_geofeature_3digit(geojson['features'], p, color)
         elif re.search(r'^\d{6}(?!\d)', p):
-          reg = str(int(p[0:3]))
-          prov = str(int(p[3:6]))
-          try:
-            for k,v in self.istat['reg'][reg]['prov'][prov]['com'].items():
-              empty_feat = {
-                'type': 'Feature',
-                'properties': {
-                  'code' : '',
-                  'color': color
-                },
-                'geometry': {
-                  'type': 'Point',
-                  'coordinates': []
-                }
-              }
-              empty_feat['properties']['code'] = v['name']
-              if v['centroid'] == [0,0]:
-                print('Null geodata for ' + v['name'] + '(' + reg + '|' + prov + '|' + k + ')')
-                continue
-              empty_feat['geometry']['coordinates'] = v['centroid']
-              geojson['features'].append(empty_feat)
-          except:
-            print('No match for ' + reg + '|' + prov)
-            continue
+          self.extract_geofeature_6digit(geojson['features'], p, color)
         elif re.search(r'^\d{9}(?!\d)', p):
           self.extract_geofeature_9digit(geojson['features'], p, color)
+        elif p == 'italy':
+          self.extract_geofeature_italy(geojson['features'], p, color)
         else:
           print('No query match : ' + p)
 
+      # sanity checks and various init
+      if 'times' in self.istat:
+        geojson['times'] = self.istat['times']
+
       if len(geojson['features']) == 0:
+        print('pusho italy')
         geojson['features'].append(italy_feat)
+        geojson['times'] = default_times
 
       status, content_type, response_content, size = self.serve_json(geojson)
     else:
