@@ -6,41 +6,48 @@
     <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
     <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.2.0/build/ol.js"></script>
     <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
-
   </head>
   <body>
     <div id="map" class="map" style="height:80vh; width:70vw"></div>
     <div id="date-time">Date-time: none</div>
-    <div id="ranges">Ranges: </div>
+    <div id="ranges">Ranges: none</div>
     <label id="lbl-min-cnt" for="min-input">min</label>
     <input id="min-input" type="range" min="-200" max="500" step="50" value="0" onchange="min_input_update()">
     <label id="lbl-max-cnt" for="max-input">max</label>
     <input id="max-input" type="range" min="10" max="5000" step="100" value="1000" onchange="max_input_update()">
-    <label id="lbl-time-input" for="time-input">time step: 50ms&nbsp;</label>
+    <label id="lbl-time-input" for="time-input">time step:</label>
     <input id="time-input" type="range" min="10" max="1000" step="50" value="50" onchange="time_input_update()">
     <button id="start-animation">Start Animation</button>
     <button id="backward-animation">-</button>
     <button id="forward-animation">+</button>
+    <input type="checkbox" id="loop-input">Loop<br>
     <script>
       // global parameters
       var minCnt = -10
       var maxCnt = 200
+      var timeIdx = 0;
+      var timeSlice = 100
 
       // update function
       function min_input_update(){
         minCnt = document.getElementById('min-input').value;
         document.getElementById('ranges').innerHTML = 'Range: ' + minCnt + ' - ' + maxCnt;
       }
+      min_input_update();
+
       function max_input_update(){
         maxCnt = document.getElementById('max-input').value;
         document.getElementById('ranges').innerHTML = 'Range: ' + minCnt + ' - ' + maxCnt;
       }
+      max_input_update();
+
       function time_input_update(){
         var ts = 'time step: ' + document.getElementById('time-input').value + 'ms   ';
         document.getElementById('lbl-time-input').innerHTML = ts;
       }
+      time_input_update();
 
-      // parse current url to construct proper acemap json fetching url
+      // parse current url to construct proper acemap geojson fetching url
       var url = window.location.href
       var baseurl = url.substring(0, url.lastIndexOf('/'));
 
@@ -59,17 +66,9 @@
         return Httpreq.responseText;
       }
       var j = Get(jsonurl);
-//      console.log(j)
       var geojsonObject = JSON.parse(j);
-      var timeSlice = geojsonObject['times'].length;
-
-//      console.log("time_cnt : ");
-//      console.log(geojsonObject['features'][0]['properties']['time_cnt'][1]);
-
-      function weightHeatmap(feature) {
-        var val = feature.get('time_cnt')[timeIdx] == null ? 0.1 : feature.get('time_cnt')[timeIdx];
-        return (val - minCnt) / (maxCnt - minCnt);
-      }
+      timeSlice = geojsonObject['times'].length;
+      document.getElementById('date-time').innerHTML = 'Date-time: ' + geojsonObject['times'][timeIdx];
 
       // create vector layer source
       var vectorSource = new ol.source.Vector({
@@ -80,11 +79,15 @@
         })).readFeatures(geojsonObject)
       });
 
-      var timeIdx = 0;
+      function weightHeatmap(feature) {
+        var val = feature.get('time_cnt')[timeIdx] == null ? 0.1 : feature.get('time_cnt')[timeIdx];
+        return (val - minCnt) / (maxCnt - minCnt);
+      }
+
       var heatMaplayer = new ol.layer.Heatmap({
         source: vectorSource,
-        blur: 10,
-        radius: 10,
+        blur: 15,
+        radius: 20,
         weight: weightHeatmap
       });
 
@@ -113,6 +116,7 @@
       var animating = false;
       var timeInterval, timeNow;
       var timeInput = document.getElementById('time-input');
+      var loopInput = document.getElementById('loop-input');
 
       var moveFeature = function(event) {
         var vectorContext = event.vectorContext;
@@ -122,10 +126,14 @@
           var elapsedTime = frameState.time - timeNow;
           timeIdx = Math.floor(elapsedTime / timeInterval);
           if (timeIdx > timeSlice - 1) {
-            //stopAnimation(true);
-            //return;
-            timeNow = new Date().getTime();
-            timeIdx = 0
+            if (loopInput.checked) {
+              timeNow = new Date().getTime();
+              timeIdx = 0
+            }
+            else {
+              stopAnimation(true);
+              return;
+            }
           }
           document.getElementById('date-time').innerHTML = 'Date-time: ' + geojsonObject['times'][timeIdx];
         }
@@ -133,7 +141,6 @@
         map.render();
       };
 
-      var startButton = document.getElementById('start-animation');
       function startAnimation() {
         if (animating) {
           stopAnimation(false);
@@ -146,16 +153,34 @@
           map.render();
         }
       }
+      var startButton = document.getElementById('start-animation');
       startButton.addEventListener('click', startAnimation, false);
 
       function stopAnimation(ended) {
         animating = false;
         startButton.textContent = 'Start Animation';
         timeIdx = 0;
-
-        //remove listener
         map.un('postcompose', moveFeature);
       }
+
+      function forwardAnimation() {
+        timeIdx = (timeIdx > timeSlice - 1) ? 0 : timeIdx + 1;
+        document.getElementById('date-time').innerHTML = 'Date-time: ' + geojsonObject['times'][timeIdx];
+        vectorSource.refresh(); // trigger cascade refresh
+        map.render();
+      }
+      var forwardButton = document.getElementById('forward-animation');
+      forwardButton.addEventListener('click', forwardAnimation, false);
+
+      function backwardAnimation() {
+        timeIdx = (timeIdx < 1) ? timeSlice - 1 : timeIdx - 1;
+        document.getElementById('date-time').innerHTML = 'Date-time: ' + geojsonObject['times'][timeIdx];
+        vectorSource.refresh(); // trigger cascade refresh
+        map.render();
+      }
+      var backwardButton = document.getElementById('backward-animation');
+      backwardButton.addEventListener('click', backwardAnimation, false);
+
 
     </script>
   </body>
