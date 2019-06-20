@@ -11,19 +11,34 @@
   <body>
     <div id="map" class="map" style="height:80vh; width:70vw"></div>
     <div id="date-time">Date-time: none</div>
-    <div id="ranges">Ranges: none</div>
+    <div id="ranges">Ranges: </div>
+    <label id="lbl-min-cnt" for="min-input">min</label>
+    <input id="min-input" type="range" min="-200" max="500" step="50" value="0" onchange="min_input_update()">
+    <label id="lbl-max-cnt" for="max-input">max</label>
+    <input id="max-input" type="range" min="10" max="5000" step="100" value="1000" onchange="max_input_update()">
     <label id="lbl-time-input" for="time-input">time step: 50ms&nbsp;</label>
     <input id="time-input" type="range" min="10" max="1000" step="50" value="50" onchange="time_input_update()">
-    <script>
-      function time_input_update(){
-        var ts = 'time step: ' + document.getElementById('time-input').value + 'ms   ';
-        document.getElementById('lbl-time-input').innerHTML = ts;
-      }
-    </script>
     <button id="start-animation">Start Animation</button>
     <button id="backward-animation">-</button>
     <button id="forward-animation">+</button>
     <script>
+      // global parameters
+      var minCnt = -10
+      var maxCnt = 200
+
+      // update function
+      function min_input_update(){
+        minCnt = document.getElementById('min-input').value;
+        document.getElementById('ranges').innerHTML = 'Range: ' + minCnt + ' - ' + maxCnt;
+      }
+      function max_input_update(){
+        maxCnt = document.getElementById('max-input').value;
+        document.getElementById('ranges').innerHTML = 'Range: ' + minCnt + ' - ' + maxCnt;
+      }
+      function time_input_update(){
+        var ts = 'time step: ' + document.getElementById('time-input').value + 'ms   ';
+        document.getElementById('lbl-time-input').innerHTML = ts;
+      }
 
       // parse current url to construct proper acemap json fetching url
       var url = window.location.href
@@ -51,11 +66,7 @@
 //      console.log("time_cnt : ");
 //      console.log(geojsonObject['features'][0]['properties']['time_cnt'][1]);
 
-      var minCnt = -10
-      var maxCnt = 1000
-      document.getElementById('ranges').innerHTML = 'Range: ' + minCnt + ' - ' + maxCnt;
       function weightHeatmap(feature) {
-//        console.log("mv : " + feature.get('time_cnt')[timeIdx]);
         var val = feature.get('time_cnt')[timeIdx] == null ? 0.1 : feature.get('time_cnt')[timeIdx];
         return (val - minCnt) / (maxCnt - minCnt);
       }
