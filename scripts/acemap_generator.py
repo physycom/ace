@@ -51,7 +51,7 @@ for index, row in dfistat.iterrows():
   istat['reg'][regid]['prov'][provid]['com'][comid]['sez_count'] = 0
 
 # Print istat map on stdout
-def view(verbose):
+def view(verbose, com_verbose):
   reg_tot = 0
   prov_tot = 0
   com_tot = 0
@@ -59,19 +59,21 @@ def view(verbose):
     reg_tot += 1
     if verbose:
       print('- {:03d} - {:<35s} ({: 2d}) '.format(r, v['name'], len(v['prov'])))
-    for c, n in v['prov'].items():
+    for p, n in v['prov'].items():
       prov_tot += 1
       com_tot += len(n['com'])
       if verbose:
-        print('\t* {:03d} - {:<35s} ({: 4d})'.format(c, n['name'], len(n['com'])))
-        #print('{}'.format(n['com'].keys()))
+        print('\t* {:03d} - {:<35s} ({: 4d})'.format(p, n['name'], len(n['com'])))
+        if com_verbose:
+          for c, m in n['com'].items():
+            print('\t\t+ {:03d} - {:<35s} {:03}|{:03}|{:03}'.format(c, m['name'], r, p, c))
   print("ISTAT tot reg  :",reg_tot)
   print("ISTAT tot prov :",prov_tot)
   print("ISTAT tot com  :",com_tot)
-view(True)
+view(True, False)
 
 import json
 with open('acemap-empty-hr.json', 'w') as f:
-  json.dump(istat, f, indent=2,  ensure_ascii=False)
+  json.dump(istat, f, indent=2, ensure_ascii=False)
 with open('acemap-empty.json', 'w') as f:
   json.dump(istat, f, ensure_ascii=False)
