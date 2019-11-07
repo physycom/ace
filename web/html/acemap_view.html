@@ -25,14 +25,14 @@
 
       // perform GET request (may raise warnings or even CORS errors)
       var jsonurl = baseurl + '/json' + params
-      function Get(yourUrl){
+      function Get(url){
         var Httpreq = new XMLHttpRequest(); // a new request
-        Httpreq.open('GET',yourUrl,false);
+        Httpreq.open('GET',url,false);
         Httpreq.send();
         return Httpreq.responseText;
       }
       var j = Get(jsonurl);
-//      console.log(j)
+      console.log(j)
       var geojsonObject = JSON.parse(j);
 
       // set style function to parse geojson content
@@ -105,7 +105,7 @@
       });
 
       // modify view to enclose all features
-      if (geojsonObject['features'].length == 1){
+      if (geojsonObject['features'].length == 1 && geojsonObject['features'][0]['geometry']['type'] == 'Point'){
         c = geojsonObject['features'][0]['geometry']['coordinates']
         map.getView().setCenter(ol.proj.transform([c[0], c[1]], 'EPSG:4326',  'EPSG:3857'));
         map.getView().setZoom(7);
