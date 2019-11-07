@@ -70,19 +70,19 @@ class Server(BaseHTTPRequestHandler):
       }
 
       for p in params:
-        if p in aced:
+        acelist = [ a for a in aced.keys() if a.startswith(p) ]
+        for a in acelist:
           feat = {
             'type': 'Feature',
             'properties': {
-              'code' : p,
+              'code' : a,
               'color': 'rgba(255,0,0,0.3)'
             },
-            'geometry': aced[p]['geometry']
+            'geometry': aced[a]['geometry']
           }
           geojson['features'].append(feat)
-        else:
+        if len(acelist) == 0:
           print('ACETAG {} not found, skipping.'.format(p))
-
       status, content_type, response_content, size = self.serve_json(geojson)
 
     else:
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     sez = '{:03.0f}'.format(sezfull // 1000)
     sezace = '{:03.0f}'.format(sezfull - (sezfull // 1000) * 1000)
     acetag = '|'.join([reg, pro, com, sez, sezace])
-    print(acetag)
+    #print(acetag)
     if acetag in aced:
       print('ACETAG {} duplicated, skipping'.format(acetag))
       continue
@@ -133,8 +133,11 @@ if __name__ == '__main__':
     }
 
   print('ACE parsed : {}'.format(len(aced)))
-
-#  exit(1)
+  acelist = acedata[:acedata.rfind('.')] + '.acelist'
+  with open(acelist, 'w') as f:
+    for a in sorted(aced.keys()):
+      f.write('{}\n'.format(a))
+  print('ACE list file : {}'.format(acelist))
 
   import time
   from http.server import HTTPServer
