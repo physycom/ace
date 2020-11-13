@@ -4,6 +4,9 @@ import geopandas as gpd
 import argparse
 import glob
 from datetime import datetime
+import matplotlib.pyplot as plt
+import contextily as ctx
+from shapely import geometry
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--shp", help="ISTAT shapefile regex", required=True)
@@ -57,5 +60,13 @@ for f in shapefiles:
 
   df_shp[['ACE_ID','LAT','LON']].sort_values(by=['ACE_ID']).to_csv(base + '.csv', sep=',', index=False)
   print('[aceISTAT] Done in {} s'.format(datetime.now() - ti), flush=True)
+
+  ace_map = 'istat_ace_map.png'
+  ax = df_shp.plot(alpha=0.5, edgecolor='k', figsize=(12, 12))
+  #for idx, row in coils.iterrows(): ax.annotate(s=row['NAME'], xy=row[['x', 'y']], horizontalalignment='center')
+  #ctx.add_basemap(ax, crs=coils.crs.to_string(), source=ctx.providers.CartoDB.Voyager)
+  plt.savefig(ace_map)
+  plt.close()
+
 
 print('[aceISTAT] Total aceid geotagged {}'.format(acetot), flush=True)
