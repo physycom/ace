@@ -70,3 +70,5 @@ bld/
 *.kml
 *.kmz
 *.csv
+
+work_*/
