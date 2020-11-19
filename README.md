@@ -64,13 +64,20 @@ Update geodata on an *acemap* of italian _comuni_ populating fields: `centroid` 
 
 - `istat-ace.py`
 Parse ISTAT ACE data and dump ???
-  + input:
+  + input: Per region shapefiles [link](https://www.istat.it/it/archivio/104317)
+  + input: Correct version of naming metadata [link](https://www.istat.it/storage/codici-unita-amministrative/Archivio-elenco-comuni-codici-e-denominazioni_Anni_2011-2015.zip)
+  + usage: After extraction of ISTAT data in a folder (e.g. `istat_data`) launch (30-40 min)
+```
+# Perform ISTAT shapefile analysis, merge by scale level
+(time ~/Codice/ace/python/istat-ace.py -d istat_data -p -v -ma -mc -mp -mr) 2>&1 | tee log_merge_full.log
 
+# Pack and annotate joining naming data
+(time ~/Codice/ace/python/istat-ace.py -d istat_data -pa r p c a) 2>&1 | tee log_pack_full.log
+
+# Plot to test
+(time ~/Codice/ace/python/istat-ace.py -s r p c a -m) 2>&1 | tee log_plot_full.log
+```
+  + output: Collection of csv and shapefiles aggregated at various ISTAT scale (reg, pro, com, ace) with naming metadata.
 
 ### References
 Details of ISTAT databases available [here](https://www.istat.it/it/files/2013/11/2015.04.28-Descrizione-dati-Pubblicazione.pdf)
-
-### TODO
-- add legend to acemap_view.html
-- aceserver fix 'no geodata for 1|1'
-- study https://openlayers.org/en/latest/examples/animation.html
