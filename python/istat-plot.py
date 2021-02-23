@@ -54,7 +54,7 @@ if __name__ == '__main__':
       rdf['x'] = rdf.geometry.centroid.x
       rdf['y'] = rdf.geometry.centroid.y
       for idx, row in rdf.iterrows():
-        ax.annotate(s=row['REG_NAME'], xy=row[['x', 'y']], horizontalalignment='center')
+        ax.annotate(text=row['REG_NAME'], xy=row[['x', 'y']], horizontalalignment='center')
       ax.axis('off')
       plt.title(f'REGIONI ({len(rdf)}) annotated shapefile')
       mapfile = f'{basename}.png'
@@ -107,7 +107,7 @@ if __name__ == '__main__':
         pdf['x'] = pdf.geometry.centroid.x
         pdf['y'] = pdf.geometry.centroid.y
         for idx, row in pdf.iterrows():
-          ax.annotate(s=row['PRO_NAME'], xy=row[['x', 'y']], horizontalalignment='center')
+          ax.annotate(text=row['PRO_NAME'], xy=row[['x', 'y']], horizontalalignment='center')
 
         ax.axis('off')
         plt.suptitle(f'REGIONE {rf} {regname} PRO ({len(pdf)}) annotated shapefile')
@@ -154,12 +154,17 @@ if __name__ == '__main__':
         cdf['x'] = cdf.geometry.centroid.x
         cdf['y'] = cdf.geometry.centroid.y
         for idx, row in cdf.iterrows():
-          ax.annotate(s=row['COM_NAME'], xy=row[['x', 'y']], horizontalalignment='center')
+          ax.annotate(text=row['COM_NAME'], xy=row[['x', 'y']], horizontalalignment='center')
 
         ax.axis('off')
         plt.suptitle(f'PROVINCIA {pf} {proname} COM ({len(cdf)}) annotated shapefile')
         mapfile = f'{basename}_{pf}.png'
         plt.savefig(mapfile)
+        # add map
+        if args.domap:
+          ctx.add_basemap(ax, crs=cdf.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik)
+          mapfile = f'{basename}_{pf}_map.png'
+          plt.savefig(mapfile)
         plt.close()
 
     """ Plot ACE scale """
@@ -204,10 +209,10 @@ if __name__ == '__main__':
         adf['y'] = adf.geometry.centroid.y
         for idx, row in adf.iterrows():
           if row.geometry.type == 'Polygon':
-            ax.annotate(s=f'{row.ACE:03d}', xy=row[['x', 'y']], horizontalalignment='center')
+            ax.annotate(text=f'{row.ACE:03d}', xy=row[['x', 'y']], horizontalalignment='center')
           elif row.geometry.type == 'MultiPolygon':
             for i, pol in enumerate(list(row['geometry'])):
-              ax.annotate(s=f'{row.ACE:03d}', xy=(pol.centroid.x, pol.centroid.y), horizontalalignment='center')
+              ax.annotate(text=f'{row.ACE:03d}', xy=(pol.centroid.x, pol.centroid.y), horizontalalignment='center')
 
         plt.suptitle(f'UID {cf} COM {comname} (objects {len(adf)}) annotated shapefile')
         ax.axis('off')

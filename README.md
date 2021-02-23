@@ -62,7 +62,8 @@ Update geodata on an *acemap* of italian _comuni_ populating fields: `centroid` 
   + input: regex to match file of the form `mobility_YYYYMMDD_HHMM.tsv` (properly formatted mobility data)
   + output: `acemap_RXX.geojson` where `RXX` is the _regione_ shapefile tag (e.g. `R01` is for _Piemonte_)
 
-- `istat-ace.py`
+
+- `istat-ace.py` and `istat-plot.py`
 Parse ISTAT ACE data and dump ???
   + input: Per region shapefiles [link](https://www.istat.it/it/archivio/104317)
   + input: Correct version of naming metadata [link](https://www.istat.it/storage/codici-unita-amministrative/Archivio-elenco-comuni-codici-e-denominazioni_Anni_2011-2015.zip)
@@ -75,7 +76,7 @@ Parse ISTAT ACE data and dump ???
 (time ~/Codice/ace/python/istat-ace.py -d istat_data -pa r p c a) 2>&1 | tee log_pack_full.log
 
 # Plot to test
-(time ~/Codice/ace/python/istat-ace.py -s r p c a -m) 2>&1 | tee log_plot_full.log
+(time ~/Codice/ace/python/istat-plot.py -s r p c a -m) 2>&1 | tee log_plot_full.log
 ```
   + output: Collection of csv and shapefiles aggregated at various ISTAT scale (reg, pro, com, ace) with naming metadata.
 
